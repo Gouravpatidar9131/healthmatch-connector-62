@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -45,6 +44,13 @@ const Homepage = () => {
     "Comprehensive Analytics"
   ];
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       {/* Modern Floating Navigation */}
@@ -61,15 +67,24 @@ const Homepage = () => {
             </div>
             
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#services" className="text-gray-600 hover:text-blue-500 font-medium transition-colors">
+              <button 
+                onClick={() => scrollToSection('services')}
+                className="text-gray-600 hover:text-blue-500 font-medium transition-colors cursor-pointer"
+              >
                 Services
-              </a>
-              <a href="#about" className="text-gray-600 hover:text-blue-500 font-medium transition-colors">
+              </button>
+              <button 
+                onClick={() => scrollToSection('about')}
+                className="text-gray-600 hover:text-blue-500 font-medium transition-colors cursor-pointer"
+              >
                 About
-              </a>
-              <a href="#contact" className="text-gray-600 hover:text-blue-500 font-medium transition-colors">
+              </button>
+              <button 
+                onClick={() => scrollToSection('contact')}
+                className="text-gray-600 hover:text-blue-500 font-medium transition-colors cursor-pointer"
+              >
                 Contact
-              </a>
+              </button>
               <Link 
                 to="/login" 
                 className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl"
@@ -200,6 +215,74 @@ const Homepage = () => {
         </div>
       </section>
 
+      {/* About Section */}
+      <section id="about" className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              About Curezy
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              We're revolutionizing healthcare with AI-powered solutions that make 
+              quality medical care accessible, efficient, and personalized for everyone.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-gray-900">Our Mission</h3>
+              <p className="text-gray-600 leading-relaxed">
+                At Curezy, we believe healthcare should be intelligent, accessible, and patient-centered. 
+                Our AI-powered platform combines cutting-edge technology with compassionate care to 
+                deliver personalized health solutions that adapt to your unique needs.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-3">
+                  <Shield className="h-6 w-6 text-blue-500" />
+                  <span className="text-gray-700 font-medium">HIPAA Compliant</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Users className="h-6 w-6 text-emerald-500" />
+                  <span className="text-gray-700 font-medium">Expert Network</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Clock className="h-6 w-6 text-purple-500" />
+                  <span className="text-gray-700 font-medium">24/7 Available</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Sparkles className="h-6 w-6 text-blue-500" />
+                  <span className="text-gray-700 font-medium">AI-Powered</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-xl p-8 border border-blue-100/50">
+              <div className="space-y-6">
+                <h4 className="text-xl font-semibold text-gray-900">Why Choose Curezy?</h4>
+                <ul className="space-y-4">
+                  <li className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mt-1" />
+                    <span className="text-gray-600">Advanced AI symptom analysis with 95% accuracy</span>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mt-1" />
+                    <span className="text-gray-600">Instant appointment booking with verified doctors</span>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mt-1" />
+                    <span className="text-gray-600">Secure, encrypted health records management</span>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-emerald-500 mt-1" />
+                    <span className="text-gray-600">Emergency assistance with real-time support</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Stats Section */}
       <section className="py-24 bg-gradient-to-r from-blue-500 to-blue-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -243,6 +326,58 @@ const Homepage = () => {
               <ArrowRight className="ml-3 h-6 w-6" />
             </Button>
           </Link>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-24 bg-white/40 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Get in Touch
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Have questions about Curezy? We're here to help you on your healthcare journey.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="text-center space-y-4">
+              <div className="inline-flex p-4 bg-blue-50 rounded-2xl">
+                <Clock className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">24/7 Support</h3>
+              <p className="text-gray-600">Round-the-clock assistance for all your healthcare needs</p>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="inline-flex p-4 bg-emerald-50 rounded-2xl">
+                <Heart className="h-8 w-8 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Email Support</h3>
+              <p className="text-gray-600">admin@curezy.in</p>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <div className="inline-flex p-4 bg-purple-50 rounded-2xl">
+                <Users className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Phone Support</h3>
+              <p className="text-gray-600">1-800-HEALTH</p>
+            </div>
+          </div>
+          
+          <div className="text-center">
+            <Link to="/login">
+              <Button 
+                size="xl" 
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-12 py-6 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+              >
+                Start Your Journey Today
+                <ArrowRight className="ml-3 h-6 w-6" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
