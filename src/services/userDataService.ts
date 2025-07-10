@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +7,7 @@ import { Json } from "@/integrations/supabase/types";
 export interface Appointment {
   id?: string;
   user_id?: string;
+  doctor_id?: string;
   doctor_name: string;
   doctor_specialty?: string;
   date: string;
@@ -307,6 +307,50 @@ export const useUserProfile = () => {
   return { profile, loading, error, updateProfile };
 };
 
+// Helper function to find or create doctor ID
+const findOrCreateDoctorId = async (doctorName: string, doctorSpecialty?: string): Promise<string> => {
+  // First, try to find an existing verified doctor
+  const { data: existingDoctor, error: searchError } = await supabase
+    .from('doctors')
+    .select('id')
+    .eq('name', doctorName)
+    .eq('verified', true)
+    .maybeSingle();
+
+  if (searchError) {
+    console.error('Error searching for doctor:', searchError);
+  }
+
+  if (existingDoctor) {
+    return existingDoctor.id;
+  }
+
+  // If no verified doctor found, create a placeholder entry
+  const { data: newDoctor, error: createError } = await supabase
+    .from('doctors')
+    .insert([{
+      name: doctorName,
+      specialization: doctorSpecialty || 'General Medicine',
+      hospital: 'To be verified',
+      address: 'To be verified',
+      region: 'To be verified',
+      degrees: 'To be verified',
+      experience: 0,
+      registration_number: 'PENDING_VERIFICATION',
+      verified: false,
+      available: false
+    }])
+    .select('id')
+    .single();
+
+  if (createError) {
+    console.error('Error creating doctor placeholder:', createError);
+    throw new Error('Failed to create doctor record');
+  }
+
+  return newDoctor.id;
+};
+
 // Custom hook to fetch user appointments
 export const useUserAppointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -405,10 +449,17 @@ export const useUserAppointments = () => {
         }
       }
 
-      // Then create the appointment with the user_id reference
+      // Get or create doctor_id if not provided
+      let doctorId = newAppointment.doctor_id;
+      if (!doctorId) {
+        doctorId = await findOrCreateDoctorId(newAppointment.doctor_name, newAppointment.doctor_specialty);
+      }
+
+      // Then create the appointment with the user_id reference and required doctor_id
       const appointmentWithUserId = {
         ...newAppointment,
         user_id: user.id,
+        doctor_id: doctorId,
         status: validateAppointmentStatus(newAppointment.status || 'pending'),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

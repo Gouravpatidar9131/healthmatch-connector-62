@@ -65,6 +65,49 @@ export const BookAppointmentDialog = ({ open, onOpenChange, selectedDoctor, heal
     }
   }, [selectedDoctor]);
 
+  const findOrCreateDoctorId = async (doctorName: string, doctorSpecialty?: string): Promise<string> => {
+    // First, try to find an existing verified doctor
+    const { data: existingDoctor, error: searchError } = await supabase
+      .from('doctors')
+      .select('id')
+      .eq('name', doctorName)
+      .eq('verified', true)
+      .maybeSingle();
+
+    if (searchError) {
+      console.error('Error searching for doctor:', searchError);
+    }
+
+    if (existingDoctor) {
+      return existingDoctor.id;
+    }
+
+    // If no verified doctor found, create a placeholder entry
+    const { data: newDoctor, error: createError } = await supabase
+      .from('doctors')
+      .insert([{
+        name: doctorName,
+        specialization: doctorSpecialty || 'General Medicine',
+        hospital: 'To be verified',
+        address: 'To be verified',
+        region: 'To be verified',
+        degrees: 'To be verified',
+        experience: 0,
+        registration_number: 'PENDING_VERIFICATION',
+        verified: false,
+        available: false
+      }])
+      .select('id')
+      .single();
+
+    if (createError) {
+      console.error('Error creating doctor placeholder:', createError);
+      throw new Error('Failed to create doctor record');
+    }
+
+    return newDoctor.id;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -86,6 +129,9 @@ export const BookAppointmentDialog = ({ open, onOpenChange, selectedDoctor, heal
         throw new Error('User not authenticated');
       }
 
+      // Get or create doctor_id
+      const doctorId = selectedDoctor?.id || await findOrCreateDoctorId(formData.doctorName, formData.doctorSpecialty);
+
       // Prepare reason with health check summary if available
       let appointmentReason = formData.reason;
       if (healthCheckData) {
@@ -94,11 +140,12 @@ export const BookAppointmentDialog = ({ open, onOpenChange, selectedDoctor, heal
         appointmentReason = `Health Check Follow-up: ${symptomsText}${urgencyText}${formData.reason ? ' - ' + formData.reason : ''}`;
       }
 
-      // Create appointment
+      // Create appointment with required doctor_id
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
         .insert([{
           user_id: user.id,
+          doctor_id: doctorId,
           doctor_name: formData.doctorName,
           doctor_specialty: formData.doctorSpecialty || null,
           date: format(date, 'yyyy-MM-dd'),
@@ -120,7 +167,7 @@ export const BookAppointmentDialog = ({ open, onOpenChange, selectedDoctor, heal
           const success = await sendHealthCheckToDoctor(
             healthCheckData,
             appointment.id,
-            selectedDoctor?.id || 'doctor-placeholder'
+            doctorId
           );
           
           if (success) {
