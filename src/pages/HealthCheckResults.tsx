@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +43,7 @@ const HealthCheckResults = () => {
       case 'high':
         return 'destructive';
       case 'medium':
-        return 'warning';
+        return 'outline';
       case 'low':
         return 'secondary';
       default:
@@ -116,24 +117,27 @@ const HealthCheckResults = () => {
             </div>
           </div>
 
-          {/* Patient Measurements Section */}
+          {/* Patient Information Section - Enhanced to show in the main summary */}
           {(healthCheckData.age || healthCheckData.height || healthCheckData.weight) && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
-              <h3 className="font-medium text-green-800 mb-2">Patient Information</h3>
-              <div className="grid gap-2 md:grid-cols-3 text-sm text-green-700">
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <h3 className="text-lg font-semibold text-blue-800 mb-3">Patient Information</h3>
+              <div className="grid gap-3 md:grid-cols-3 text-sm text-blue-700">
                 {healthCheckData.age && (
-                  <div>
-                    <span className="font-medium">Age:</span> {healthCheckData.age} years
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">Age:</span> 
+                    <span className="bg-blue-100 px-2 py-1 rounded">{healthCheckData.age} years</span>
                   </div>
                 )}
                 {healthCheckData.height && (
-                  <div>
-                    <span className="font-medium">Height:</span> {healthCheckData.height} cm
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">Height:</span> 
+                    <span className="bg-blue-100 px-2 py-1 rounded">{healthCheckData.height} cm</span>
                   </div>
                 )}
                 {healthCheckData.weight && (
-                  <div>
-                    <span className="font-medium">Weight:</span> {healthCheckData.weight} kg
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">Weight:</span> 
+                    <span className="bg-blue-100 px-2 py-1 rounded">{healthCheckData.weight} kg</span>
                   </div>
                 )}
               </div>
