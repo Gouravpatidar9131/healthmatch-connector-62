@@ -84,7 +84,6 @@ const HealthCheck = () => {
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [severity, setSeverity] = useState<string>("");
   const [duration, setDuration] = useState<string>("");
-  const [age, setAge] = useState<string>("");
   const [height, setHeight] = useState<string>("");
   const [weight, setWeight] = useState<string>("");
   const [previousConditions, setPreviousConditions] = useState<string>("");
@@ -366,13 +365,12 @@ const HealthCheck = () => {
         photo: symptomPhotos[symptom] || null
       }));
       
-      // Enhanced analysis request with all patient information including age, height, and weight
+      // Enhanced analysis request with all patient information including height/weight
       const response = await supabase.functions.invoke('analyze-symptoms', {
         body: { 
           symptoms: selectedSymptoms,
           severity,
           duration,
-          age: age ? parseInt(age) : null,
           height: height ? parseFloat(height) : null,
           weight: weight ? parseFloat(weight) : null,
           symptomDetails: symptomsWithPhotos,
@@ -395,7 +393,6 @@ const HealthCheck = () => {
           if (response.data.includedMedications) analysisFactors.push("current medications");
           if (response.data.includedNotes) analysisFactors.push("additional notes");
           if (response.data.visualAnalysisIncluded) analysisFactors.push("photo analysis");
-          if (age) analysisFactors.push("age-specific factors");
           if (height && weight) analysisFactors.push("physical measurements");
           
           if (analysisFactors.length > 0) {
@@ -408,12 +405,11 @@ const HealthCheck = () => {
           description: toastMessage,
         });
 
-        // Navigate with enhanced health check data including age, height, and weight
+        // Navigate with enhanced health check data including height/weight
         const healthCheckData = {
           symptoms: selectedSymptoms,
           severity,
           duration,
-          age: age ? parseInt(age) : null,
           height: height ? parseFloat(height) : null,
           weight: weight ? parseFloat(weight) : null,
           previous_conditions: previousConditions ? previousConditions.split(',').map(item => item.trim()).filter(item => item) : [],
@@ -489,21 +485,9 @@ const HealthCheck = () => {
         <Card>
           <CardHeader>
             <CardTitle>Physical Information</CardTitle>
-            <CardDescription>Your age, height and weight help provide more accurate analysis</CardDescription>
+            <CardDescription>Your height and weight help provide more accurate analysis</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="age">Age (years)</Label>
-              <Input 
-                id="age" 
-                type="number"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="e.g., 25"
-                min="0"
-                max="120"
-              />
-            </div>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="height">Height (cm)</Label>
               <Input 
