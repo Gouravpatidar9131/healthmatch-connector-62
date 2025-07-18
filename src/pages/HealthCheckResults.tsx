@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +32,15 @@ const HealthCheckResults = () => {
       navigate('/health-check');
     }
   }, [healthCheckData, navigate]);
+
+  // Add debugging to see what data we have
+  useEffect(() => {
+    if (healthCheckData) {
+      console.log('Health check data in results:', healthCheckData);
+      console.log('Analysis results:', healthCheckData.analysis_results);
+      console.log('Number of analysis results:', healthCheckData.analysis_results?.length);
+    }
+  }, [healthCheckData]);
 
   if (!healthCheckData) {
     return null;
@@ -182,25 +190,97 @@ const HealthCheckResults = () => {
         </CardContent>
       </Card>
 
-      {healthCheckData.analysis_results && healthCheckData.analysis_results.length > 0 && (
+      {/* Fixed Potential Conditions Section - Enhanced error handling and debugging */}
+      {healthCheckData.analysis_results && healthCheckData.analysis_results.length > 0 ? (
         <Card>
           <CardHeader>
             <CardTitle>Potential Conditions</CardTitle>
-            <CardDescription>Based on the analysis of your symptoms</CardDescription>
+            <CardDescription>
+              Based on the analysis of your symptoms ({healthCheckData.analysis_results.length} conditions found)
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {healthCheckData.analysis_results.map((result: any, index: number) => (
-              <div key={index} className="border rounded-md p-4">
-                <h4 className="font-semibold">{result.condition}</h4>
-                <p className="text-sm">Probability: {result.probability}</p>
-                {result.details && (
-                  <div className="mt-2">
-                    <h5 className="font-medium">Details:</h5>
-                    <p className="text-sm">{result.details}</p>
+              <div key={index} className="border rounded-md p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-lg">{result.name}</h4>
+                  {result.matchScore && (
+                    <Badge variant="secondary" className="ml-2">
+                      {result.matchScore}% match
+                    </Badge>
+                  )}
+                </div>
+                
+                {result.description && (
+                  <p className="text-sm text-gray-700">{result.description}</p>
+                )}
+                
+                {result.matchedSymptoms && result.matchedSymptoms.length > 0 && (
+                  <div>
+                    <h5 className="font-medium text-sm mb-2">Matched Symptoms:</h5>
+                    <div className="flex flex-wrap gap-1">
+                      {result.matchedSymptoms.map((symptom: string, symIndex: number) => (
+                        <Badge key={symIndex} variant="outline" className="text-xs">
+                          {symptom}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {result.recommendedActions && result.recommendedActions.length > 0 && (
+                  <div>
+                    <h5 className="font-medium text-sm mb-2">Recommended Actions:</h5>
+                    <ul className="list-disc pl-5 text-sm space-y-1">
+                      {result.recommendedActions.map((action: string, actionIndex: number) => (
+                        <li key={actionIndex}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {result.seekMedicalAttention && (
+                  <div className="p-2 bg-orange-50 border border-orange-200 rounded">
+                    <h5 className="font-medium text-sm text-orange-800 mb-1">Medical Attention:</h5>
+                    <p className="text-sm text-orange-700">{result.seekMedicalAttention}</p>
+                  </div>
+                )}
+                
+                {result.medicalHistoryRelevance && (
+                  <div className="p-2 bg-blue-50 border border-blue-200 rounded">
+                    <h5 className="font-medium text-sm text-blue-800 mb-1">Medical History Relevance:</h5>
+                    <p className="text-sm text-blue-700">{result.medicalHistoryRelevance}</p>
+                  </div>
+                )}
+                
+                {result.medicationConsiderations && (
+                  <div className="p-2 bg-purple-50 border border-purple-200 rounded">
+                    <h5 className="font-medium text-sm text-purple-800 mb-1">Medication Considerations:</h5>
+                    <p className="text-sm text-purple-700">{result.medicationConsiderations}</p>
                   </div>
                 )}
               </div>
             ))}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Analysis Status</CardTitle>
+            <CardDescription>Information about the analysis results</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                {healthCheckData.analysis_results === undefined 
+                  ? "No analysis results available. The analysis may not have completed successfully."
+                  : "No potential conditions were identified based on the current symptoms and analysis."
+                }
+              </p>
+              <p className="text-xs text-yellow-700 mt-2">
+                Debug info: Analysis results = {JSON.stringify(healthCheckData.analysis_results)}
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -215,6 +295,9 @@ const HealthCheckResults = () => {
             <li>Consult with a healthcare professional for further evaluation.</li>
             <li>Monitor your symptoms and track any changes.</li>
             <li>Consider lifestyle adjustments to support your health.</li>
+            {healthCheckData.urgency_level === 'high' && (
+              <li className="text-red-600 font-semibold">Seek immediate medical attention due to high urgency level.</li>
+            )}
           </ul>
         </CardContent>
       </Card>
