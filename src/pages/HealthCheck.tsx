@@ -385,8 +385,12 @@ const HealthCheck = () => {
         name: symptom,
         photo: symptomPhotos[symptom] || null
       }));
+
+      // Check if there are dental symptoms for specialized analysis
+      const dentalSymptoms = selectedSymptoms.filter(symptom => isDentalSymptom(symptom));
+      const hasDentalSymptoms = dentalSymptoms.length > 0;
       
-      // Enhanced analysis request with all patient information including height/weight
+      // Enhanced analysis request with comprehensive diagnosis instructions
       const response = await supabase.functions.invoke('analyze-symptoms', {
         body: { 
           symptoms: selectedSymptoms,
@@ -397,16 +401,33 @@ const HealthCheck = () => {
           symptomDetails: symptomsWithPhotos,
           previousConditions: previousConditions ? previousConditions.split(',').map(item => item.trim()).filter(item => item) : [],
           medications: medications ? medications.split(',').map(item => item.trim()).filter(item => item) : [],
-          notes: notes.trim() || null
+          notes: notes.trim() || null,
+          // Enhanced analysis instructions
+          analysisInstructions: {
+            requireComprehensiveDiagnosis: true,
+            includeDifferentialDiagnosis: true,
+            provideDetailedExplanations: true,
+            specialFocus: hasDentalSymptoms ? 'dental' : 'general',
+            dentalSymptoms: dentalSymptoms,
+            requestedAnalysisDepth: 'comprehensive',
+            includeTreatmentRecommendations: true,
+            includePreventiveMeasures: true,
+            includeMedicalSpecialistReferrals: true,
+            analysisType: 'high_detail_diagnostic_report'
+          }
         }
       });
 
-      console.log("Enhanced analysis response:", response);
+      console.log("Enhanced comprehensive analysis response:", response);
 
       if (response.data && response.data.conditions) {
         
-        // Enhanced toast message based on comprehensive analysis
-        let toastMessage = `Found ${response.data.conditions.length} potential conditions`;
+        // Enhanced toast message for comprehensive diagnosis
+        let toastMessage = `Generated comprehensive diagnosis report with ${response.data.conditions.length} potential conditions`;
+        
+        if (hasDentalSymptoms) {
+          toastMessage += ` including specialized dental analysis for ${dentalSymptoms.length} dental symptoms`;
+        }
         
         if (response.data.comprehensiveAnalysis) {
           const analysisFactors = [];
@@ -417,16 +438,16 @@ const HealthCheck = () => {
           if (height && weight) analysisFactors.push("physical measurements");
           
           if (analysisFactors.length > 0) {
-            toastMessage += ` based on symptoms, ${analysisFactors.join(", ")}.`;
+            toastMessage += ` based on ${analysisFactors.join(", ")}.`;
           }
         }
         
         toast({
-          title: "Comprehensive analysis complete",
+          title: "Comprehensive Diagnosis Complete",
           description: toastMessage,
         });
 
-        // Navigate with enhanced health check data including height/weight
+        // Navigate with enhanced health check data
         const healthCheckData = {
           symptoms: selectedSymptoms,
           severity,
@@ -440,7 +461,9 @@ const HealthCheck = () => {
           symptom_photos: symptomPhotos,
           comprehensive_analysis: response.data.comprehensiveAnalysis,
           urgency_level: response.data.urgencyLevel,
-          overall_assessment: response.data.overallAssessment
+          overall_assessment: response.data.overallAssessment,
+          dental_analysis_included: hasDentalSymptoms,
+          specialized_analysis_type: hasDentalSymptoms ? 'dental_comprehensive' : 'general_comprehensive'
         };
         
         navigate('/health-check-results', { 
@@ -841,10 +864,11 @@ const HealthCheck = () => {
             >
               {analyzing ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                  Generating Comprehensive Diagnosis...
                 </>
               ) : (
-                'Analyze Symptoms'
+                'Generate Comprehensive Health Analysis'
               )}
             </Button>
           </CardFooter>
