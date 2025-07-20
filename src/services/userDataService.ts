@@ -624,25 +624,32 @@ export const useUserHealthChecks = () => {
           }, {} as Record<string, string>)
         : undefined;
 
+      // Filter out fields that don't exist in the database schema
+      const {
+        dental_analysis_included,
+        specialized_analysis_type,
+        ...validHealthCheckData
+      } = healthCheckData as any;
+
       // Prepare enhanced health check data with proper serialization
       const healthCheckWithUserId = {
-        ...healthCheckData,
+        ...validHealthCheckData,
         user_id: user.id,
         // Convert analysis_results to JSON for Supabase
-        ...(healthCheckData.analysis_results && {
-          analysis_results: healthCheckData.analysis_results as unknown as Json
+        ...(validHealthCheckData.analysis_results && {
+          analysis_results: validHealthCheckData.analysis_results as unknown as Json
         }),
         // Convert processed symptom_photos to JSON for Supabase
         ...(processedPhotos && {
           symptom_photos: processedPhotos as unknown as Json
         }),
-        // Include the new fields
-        comprehensive_analysis: healthCheckData.comprehensive_analysis || false,
-        urgency_level: healthCheckData.urgency_level || null,
-        overall_assessment: healthCheckData.overall_assessment || null
+        // Include only the fields that exist in the database schema
+        comprehensive_analysis: validHealthCheckData.comprehensive_analysis || false,
+        urgency_level: validHealthCheckData.urgency_level || null,
+        overall_assessment: validHealthCheckData.overall_assessment || null
       };
 
-      console.log('Saving enhanced health check with data:', healthCheckWithUserId);
+      console.log('Saving health check with filtered data:', healthCheckWithUserId);
 
       const { data, error } = await supabase
         .from('health_checks')
@@ -660,12 +667,12 @@ export const useUserHealthChecks = () => {
       
       toast({
         title: "Success",
-        description: "Comprehensive health check saved successfully"
+        description: "Health check saved successfully"
       });
       
       return parsedResult;
     } catch (err) {
-      console.error('Error saving enhanced health check:', err);
+      console.error('Error saving health check:', err);
       toast({
         title: "Error",
         description: "Failed to save health check data",
