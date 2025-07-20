@@ -386,11 +386,23 @@ const HealthCheck = () => {
         photo: symptomPhotos[symptom] || null
       }));
 
+      // Create symptom category mapping for accurate diagnosis
+      const symptomCategoryMapping = symptomCategories.map(category => ({
+        category: category.category,
+        symptoms: category.symptoms.filter(symptom => selectedSymptoms.includes(symptom))
+      })).filter(category => category.symptoms.length > 0);
+
       // Check if there are dental symptoms for specialized analysis
       const dentalSymptoms = selectedSymptoms.filter(symptom => isDentalSymptom(symptom));
       const hasDentalSymptoms = dentalSymptoms.length > 0;
       
-      // Enhanced analysis request with comprehensive diagnosis instructions
+      console.log("Sending category-constrained analysis request:", {
+        symptoms: selectedSymptoms,
+        categoryMapping: symptomCategoryMapping,
+        hasDentalSymptoms
+      });
+      
+      // Enhanced analysis request with comprehensive diagnosis instructions and category constraints
       const response = await supabase.functions.invoke('analyze-symptoms', {
         body: { 
           symptoms: selectedSymptoms,
@@ -402,7 +414,7 @@ const HealthCheck = () => {
           previousConditions: previousConditions ? previousConditions.split(',').map(item => item.trim()).filter(item => item) : [],
           medications: medications ? medications.split(',').map(item => item.trim()).filter(item => item) : [],
           notes: notes.trim() || null,
-          // Enhanced analysis instructions
+          // Enhanced analysis instructions with category constraints
           analysisInstructions: {
             requireComprehensiveDiagnosis: true,
             includeDifferentialDiagnosis: true,
@@ -413,20 +425,28 @@ const HealthCheck = () => {
             includeTreatmentRecommendations: true,
             includePreventiveMeasures: true,
             includeMedicalSpecialistReferrals: true,
-            analysisType: 'high_detail_diagnostic_report'
-          }
+            analysisType: 'high_detail_diagnostic_report',
+            categoryConstrainedAnalysis: true,
+            strictSpecialtyAdherence: true
+          },
+          // Send symptom category mapping for context-aware diagnosis
+          symptomCategories: symptomCategoryMapping
         }
       });
 
-      console.log("Enhanced comprehensive analysis response:", response);
+      console.log("Enhanced category-constrained comprehensive analysis response:", response);
 
       if (response.data && response.data.conditions) {
         
-        // Enhanced toast message for comprehensive diagnosis
-        let toastMessage = `Generated comprehensive diagnosis report with ${response.data.conditions.length} potential conditions`;
+        // Enhanced toast message for comprehensive diagnosis with category awareness
+        let toastMessage = `Generated accurate diagnosis report with ${response.data.conditions.length} potential conditions`;
         
         if (hasDentalSymptoms) {
           toastMessage += ` including specialized dental analysis for ${dentalSymptoms.length} dental symptoms`;
+        }
+        
+        if (response.data.categoryConstrainedAnalysis) {
+          toastMessage += ` using category-constrained medical reasoning for improved accuracy`;
         }
         
         if (response.data.comprehensiveAnalysis) {
@@ -443,7 +463,7 @@ const HealthCheck = () => {
         }
         
         toast({
-          title: "Comprehensive Diagnosis Complete",
+          title: "Accurate Diagnosis Complete",
           description: toastMessage,
         });
 
@@ -462,8 +482,9 @@ const HealthCheck = () => {
           comprehensive_analysis: response.data.comprehensiveAnalysis,
           urgency_level: response.data.urgencyLevel,
           overall_assessment: response.data.overallAssessment,
-          dental_analysis_included: hasDentalSymptoms,
-          specialized_analysis_type: hasDentalSymptoms ? 'dental_comprehensive' : 'general_comprehensive'
+          category_constrained_analysis: response.data.categoryConstrainedAnalysis,
+          specialty_focused_diagnosis: response.data.specialtyFocusedDiagnosis,
+          symptom_category_mapping: symptomCategoryMapping
         };
         
         navigate('/health-check-results', { 

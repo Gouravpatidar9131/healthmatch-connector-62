@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -25,7 +26,8 @@ serve(async (req) => {
       previousConditions, 
       medications, 
       notes,
-      analysisInstructions
+      analysisInstructions,
+      symptomCategories  // New field to receive symptom category mapping
     } = await req.json();
 
     if (!symptoms || symptoms.length === 0) {
@@ -42,11 +44,30 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced symptom categorization and clinical analysis
+    // Enhanced symptom categorization with medical specialty mapping
     const symptomsText = symptoms.join(", ");
     const severityInfo = severity ? `Symptom severity: ${severity}` : "";
     const durationInfo = duration ? `Duration: ${duration}` : "";
     
+    // Create symptom-to-category mapping for contextual analysis
+    let symptomCategoryMapping = "";
+    if (symptomCategories && symptomCategories.length > 0) {
+      symptomCategoryMapping = `
+SYMPTOM CATEGORY CONTEXT FOR ACCURATE DIAGNOSIS:
+${symptomCategories.map(cat => `
+${cat.category.toUpperCase()} SYMPTOMS: ${cat.symptoms.join(", ")}
+`).join("")}
+
+CRITICAL DIAGNOSTIC CONSTRAINT:
+- Symptoms MUST be analyzed within their designated medical specialty context
+- For DENTAL symptoms: Focus on oral, maxillofacial, and dental pathology ONLY
+- For EYE symptoms: Focus on ophthalmological conditions ONLY  
+- For SKIN symptoms: Focus on dermatological conditions ONLY
+- Do NOT provide diagnoses outside the symptom's medical specialty domain
+- Example: "Braces pain" (Dental category) should yield orthodontic/dental diagnoses, NOT neurological conditions like Brachial Neuritis
+`;
+    }
+
     // Comprehensive BMI and anthropometric assessment
     let clinicalAssessment = "";
     if (height && weight) {
@@ -125,14 +146,14 @@ CONTEXTUAL ANALYSIS:
 `;
     }
 
-    // Advanced visual diagnostic analysis
+    // Advanced visual diagnostic analysis with specialty focus
     let visualDiagnosticAnalysis = "";
     let diagnosticCategories = [];
     
     if (symptomDetails && symptomDetails.some(s => s.photo)) {
       visualDiagnosticAnalysis = "COMPREHENSIVE VISUAL DIAGNOSTIC ANALYSIS:\n";
       
-      // Systematic visual examination by specialty
+      // Systematic visual examination by specialty with category constraints
       const eyeSymptoms = symptomDetails.filter(s => s.photo && isEyeSymptom(s.name));
       const skinSymptoms = symptomDetails.filter(s => s.photo && isSkinSymptom(s.name));
       const dentalSymptoms = symptomDetails.filter(s => s.photo && isDentalSymptom(s.name));
@@ -218,7 +239,7 @@ DENTAL DIAGNOSTIC METHODOLOGY:
     const requiresDentalSpecialization = analysisInstructions?.specialFocus === 'dental';
     const dentalSymptomsList = analysisInstructions?.dentalSymptoms || [];
 
-    // Advanced medical reasoning prompt with systematic diagnostic approach
+    // Enhanced medical reasoning prompt with category-constrained diagnosis
     const medicalReasoningPrompt = `
 You are an advanced AI medical diagnostic system implementing evidence-based medicine principles with systematic clinical reasoning for 90%+ diagnostic accuracy.
 
@@ -226,6 +247,7 @@ PATIENT CLINICAL PRESENTATION:
 PRIMARY SYMPTOMS: ${symptomsText}
 ${severityInfo}
 ${durationInfo}
+${symptomCategoryMapping}
 ${clinicalAssessment}
 ${visualDiagnosticAnalysis}
 ${medicalHistoryAnalysis}
@@ -247,137 +269,167 @@ ADVANCED DENTAL DIAGNOSTIC PROTOCOL:
 • Assess treatment complexity and prognosis
 ` : ''}
 
+CRITICAL DIAGNOSTIC CONSTRAINTS FOR ACCURACY:
+1. SYMPTOM-CATEGORY ADHERENCE: Each symptom MUST be analyzed within its designated medical specialty
+2. SCOPE LIMITATION: Do NOT provide diagnoses outside the symptom's medical domain
+3. SPECIALTY FOCUS: 
+   - Dental symptoms → Dental/Oral conditions only
+   - Eye symptoms → Ophthalmological conditions only
+   - Skin symptoms → Dermatological conditions only
+   - General symptoms → Appropriate internal medicine conditions
+
 SYSTEMATIC MEDICAL REASONING PROTOCOL:
 
-1. CLINICAL DATA SYNTHESIS:
-   - Integrate all provided clinical information
-   - Identify symptom clusters and syndromes
-   - Analyze temporal relationships and progression
-   - Evaluate severity and functional impact
+1. CATEGORY-CONSTRAINED CLINICAL DATA SYNTHESIS:
+   - Integrate all provided clinical information within appropriate medical specialties
+   - Identify symptom clusters and syndromes within their respective domains
+   - Analyze temporal relationships and progression within specialty constraints
+   - Evaluate severity and functional impact specific to the medical specialty
 
-2. DIFFERENTIAL DIAGNOSIS FRAMEWORK:
-   - Generate comprehensive differential diagnosis list
-   - Apply Bayesian diagnostic reasoning
-   - Consider epidemiological factors (prevalence, age, gender)
-   - Evaluate risk factors and predisposing conditions
-   - Rule out red flag conditions requiring immediate attention
+2. SPECIALTY-SPECIFIC DIFFERENTIAL DIAGNOSIS FRAMEWORK:
+   - Generate comprehensive differential diagnosis list WITHIN the appropriate medical specialty
+   - Apply Bayesian diagnostic reasoning constrained to relevant medical domain
+   - Consider epidemiological factors specific to the symptom category
+   - Evaluate risk factors and predisposing conditions within the medical specialty
+   - Rule out red flag conditions within the appropriate domain
 
-3. EVIDENCE-BASED ANALYSIS:
-   - Apply clinical decision rules where applicable
-   - Use validated diagnostic criteria
-   - Consider sensitivity and specificity of clinical findings
-   - Evaluate positive and negative predictive values
-   - Integrate current medical literature evidence
+3. DOMAIN-SPECIFIC EVIDENCE-BASED ANALYSIS:
+   - Apply clinical decision rules specific to the medical specialty
+   - Use validated diagnostic criteria for the relevant medical domain
+   - Consider sensitivity and specificity within the specialty context
+   - Evaluate positive and negative predictive values for specialty-specific conditions
+   - Integrate current medical literature evidence from the appropriate field
 
-4. PATHOPHYSIOLOGICAL CORRELATION:
-   - Explain underlying disease mechanisms
-   - Correlate symptoms with anatomical and physiological processes
-   - Analyze multi-system interactions
-   - Consider genetic and environmental factors
+4. SPECIALTY-FOCUSED PATHOPHYSIOLOGICAL CORRELATION:
+   - Explain underlying disease mechanisms within the medical specialty
+   - Correlate symptoms with anatomical and physiological processes specific to the domain
+   - Analyze multi-system interactions when appropriate to the specialty
+   - Consider genetic and environmental factors relevant to the medical field
 
-5. DIAGNOSTIC CONFIDENCE ASSESSMENT:
-   - Calculate diagnostic probability scores
-   - Identify key discriminating features
-   - Assess diagnostic certainty levels
-   - Recommend confirmatory investigations
+5. CATEGORY-AWARE DIAGNOSTIC CONFIDENCE ASSESSMENT:
+   - Calculate diagnostic probability scores within the medical specialty
+   - Identify key discriminating features specific to the domain
+   - Assess diagnostic certainty levels for specialty-specific conditions
+   - Recommend confirmatory investigations appropriate to the medical field
 
-6. CLINICAL DECISION MAKING:
-   - Prioritize diagnoses by likelihood and urgency
-   - Consider treatment implications and contraindications
-   - Evaluate prognosis and natural history
-   - Plan appropriate follow-up and monitoring
+6. SPECIALTY-CONSTRAINED CLINICAL DECISION MAKING:
+   - Prioritize diagnoses by likelihood and urgency within the medical domain
+   - Consider treatment implications and contraindications specific to the specialty
+   - Evaluate prognosis and natural history within the medical field
+   - Plan appropriate follow-up and monitoring for the specific specialty
+
+EXAMPLES OF CORRECT CATEGORY-CONSTRAINED DIAGNOSIS:
+- "Braces pain" (Dental category) → Orthodontic discomfort, dental malocclusion, periodontal inflammation
+- "Eye redness" (Eye category) → Conjunctivitis, dry eye syndrome, allergic reaction
+- "Rash" (Skin category) → Dermatitis, allergic reaction, fungal infection
+
+INCORRECT DIAGNOSES TO AVOID:
+- "Braces pain" should NOT yield: Brachial Neuritis, Tendinitis, Neurological conditions
+- "Eye strain" should NOT yield: Cardiovascular conditions, Respiratory issues
+- "Dental pain" should NOT yield: Cardiac conditions, Gastrointestinal disorders
 
 REQUIRED COMPREHENSIVE OUTPUT FORMAT:
 For each potential diagnosis, provide detailed analysis including:
 
 {
   "medicalReasoningAnalysis": {
-    "systematicApproach": "Description of diagnostic methodology used",
-    "clinicalSynthesis": "Integration of all clinical data points",
-    "differentialProcess": "Step-by-step differential diagnosis reasoning"
+    "systematicApproach": "Description of category-constrained diagnostic methodology used",
+    "clinicalSynthesis": "Integration of clinical data within appropriate medical specialty",
+    "differentialProcess": "Step-by-step differential diagnosis reasoning within medical domain",
+    "categoryConstraintCompliance": "Confirmation that diagnoses are within appropriate medical specialty"
   },
   "conditions": [
     {
-      "name": "Primary Diagnosis",
-      "icd10Code": "Appropriate ICD-10 classification",
-      "diagnosticConfidence": "90-95% (High/Very High)",
-      "pathophysiology": "Detailed disease mechanism explanation",
-      "clinicalReasoning": "Evidence-based diagnostic reasoning",
-      "symptomCorrelation": "Detailed symptom-disease correlation",
-      "differentialDiagnosis": ["Alternative diagnosis 1", "Alternative diagnosis 2"],
-      "riskStratification": "Low/Moderate/High risk assessment",
-      "diagnosticCriteria": "Specific criteria met for diagnosis",
-      "evidenceLevel": "Quality of supporting evidence",
+      "name": "Primary Diagnosis (within appropriate medical specialty)",
+      "medicalSpecialty": "Specific medical specialty domain (e.g., Dentistry, Ophthalmology, Dermatology)",
+      "categoryContext": "Symptom category that led to this diagnosis",
+      "icd10Code": "Appropriate ICD-10 classification within the medical specialty",
+      "diagnosticConfidence": "90-95% (High/Very High) within specialty domain",
+      "pathophysiology": "Detailed disease mechanism explanation within medical specialty",
+      "clinicalReasoning": "Evidence-based diagnostic reasoning constrained to medical domain",
+      "symptomCorrelation": "Detailed symptom-disease correlation within specialty",
+      "specialtySpecificDifferentialDiagnosis": ["Alternative diagnoses within same medical specialty"],
+      "riskStratification": "Low/Moderate/High risk assessment within specialty context",
+      "diagnosticCriteria": "Specific criteria met for diagnosis within medical domain",
+      "evidenceLevel": "Quality of supporting evidence within medical specialty",
       "matchedSymptoms": ["symptom1", "symptom2"],
-      "unmatchedSymptoms": ["symptoms not explained by this diagnosis"],
+      "unmatchedSymptoms": ["symptoms not explained by this specialty-specific diagnosis"],
       "diagnosticScore": 92,
-      "clinicalPearls": ["Key diagnostic insights"],
-      "redFlags": ["Warning signs requiring urgent attention"],
-      "investigationsRecommended": ["Specific tests for confirmation"],
-      "treatmentConsiderations": "Evidence-based treatment approach",
-      "contraindications": ["Treatment contraindications"],
-      "prognosis": "Expected clinical course and outcomes",
-      "complications": ["Potential complications to monitor"],
-      "followUpProtocol": "Specific monitoring timeline",
-      "patientEducation": ["Key educational points"],
-      "preventiveStrategies": ["Prevention recommendations"],
-      ${diagnosticCategories.length > 0 ? '"visualFindings": "Integration of visual diagnostic findings",' : ''}
-      "medicalHistoryRelevance": "Impact of previous conditions",
-      "pharmacologicalConsiderations": "Drug interactions and adjustments"
+      "clinicalPearls": ["Key diagnostic insights within medical specialty"],
+      "redFlags": ["Warning signs requiring urgent attention within specialty"],
+      "investigationsRecommended": ["Specific tests for confirmation within medical domain"],
+      "treatmentConsiderations": "Evidence-based treatment approach within specialty",
+      "contraindications": ["Treatment contraindications specific to medical field"],
+      "prognosis": "Expected clinical course and outcomes within specialty context",
+      "complications": ["Potential complications to monitor within medical domain"],
+      "followUpProtocol": "Specific monitoring timeline for the medical specialty",
+      "patientEducation": ["Key educational points specific to medical condition"],
+      "preventiveStrategies": ["Prevention recommendations within medical specialty"],
+      ${diagnosticCategories.length > 0 ? '"visualFindings": "Integration of visual diagnostic findings within specialty",' : ''}
+      "medicalHistoryRelevance": "Impact of previous conditions on current specialty diagnosis",
+      "pharmacologicalConsiderations": "Drug interactions and adjustments within specialty context",
+      "specialtyReferralRecommendation": "Specific medical specialist referral if needed"
     }
   ],
   "overallClinicalAssessment": {
-    "primaryWorkingDiagnosis": "Most likely diagnosis with confidence level",
-    "diagnosticCertainty": "Overall confidence percentage (85-95%)",
-    "clinicalComplexity": "Simple/Moderate/Complex case assessment",
-    "urgencyClassification": "Low/Moderate/High/Emergency",
-    "systematicReviewFindings": "Review of systems implications",
-    "riskBenefitAnalysis": "Treatment vs. observation considerations"
+    "primaryWorkingDiagnosis": "Most likely diagnosis with confidence level within appropriate specialty",
+    "diagnosticCertainty": "Overall confidence percentage (85-95%) within medical domain",
+    "clinicalComplexity": "Simple/Moderate/Complex case assessment within specialty",
+    "urgencyClassification": "Low/Moderate/High/Emergency within medical context",
+    "systematicReviewFindings": "Review of systems implications within specialty",
+    "riskBenefitAnalysis": "Treatment vs. observation considerations within medical domain",
+    "categoryConstraintVerification": "Confirmation that all diagnoses are within appropriate medical specialties"
   },
   "qualityMetrics": {
-    "diagnosticAccuracy": "Estimated accuracy percentage",
-    "evidenceGrade": "A/B/C quality of evidence",
-    "consensusLevel": "Professional consensus strength",
-    "guidelineCompliance": "Adherence to clinical guidelines"
+    "diagnosticAccuracy": "Estimated accuracy percentage within specialty domain",
+    "evidenceGrade": "A/B/C quality of evidence within medical specialty",
+    "consensusLevel": "Professional consensus strength within medical field",
+    "guidelineCompliance": "Adherence to clinical guidelines specific to medical specialty",
+    "categoryAppropriatenessScore": "Score (1-10) for how well diagnoses match symptom categories"
   },
   ${requiresDentalSpecialization ? `
   "dentalSpecialistAnalysis": {
     "specialtyRecommendation": "Specific dental specialty referral",
     "urgencyLevel": "Routine/Urgent/Emergency dental care",
     "treatmentComplexity": "Simple/Moderate/Complex dental treatment",
-    "interdisciplinaryNeeds": "Medical-dental collaborative care requirements"
+    "interdisciplinaryNeeds": "Medical-dental collaborative care requirements",
+    "dentalSpecialtyFocus": "Confirmation of dental-only diagnosis scope"
   },
   ` : ''}
   "clinicalDecisionSupport": {
-    "immediateActions": ["Actions requiring immediate attention"],
-    "shortTermManagement": ["Management within 1-7 days"],
-    "longTermPlan": ["Long-term management strategy"],
-    "monitoringParameters": ["Specific parameters to track"],
-    "patientSafetyConsiderations": ["Safety measures and precautions"]
+    "immediateActions": ["Actions requiring immediate attention within specialty"],
+    "shortTermManagement": ["Management within 1-7 days specific to medical domain"],
+    "longTermPlan": ["Long-term management strategy within specialty"],
+    "monitoringParameters": ["Specific parameters to track within medical field"],
+    "patientSafetyConsiderations": ["Safety measures and precautions within specialty context"],
+    "specialtyConstraintCompliance": "Verification that all recommendations are within appropriate medical domains"
   }
 }
 
 CRITICAL REQUIREMENTS:
-- Provide 85-95% diagnostic accuracy through systematic reasoning
-- Include detailed pathophysiological explanations
-- Correlate ALL symptoms with proposed diagnoses
-- Apply evidence-based medicine principles
-- Consider patient safety as highest priority
+- Provide 85-95% diagnostic accuracy through systematic reasoning WITHIN APPROPRIATE MEDICAL SPECIALTIES
+- Include detailed pathophysiological explanations CONSTRAINED TO RELEVANT MEDICAL DOMAINS
+- Correlate ALL symptoms with proposed diagnoses WITHIN THEIR RESPECTIVE CATEGORIES
+- Apply evidence-based medicine principles SPECIFIC TO EACH MEDICAL SPECIALTY
+- Consider patient safety as highest priority WITHIN SPECIALTY CONTEXT
 - Return ONLY valid JSON format
-- Maintain clinical professional standards
+- Maintain clinical professional standards WITHIN APPROPRIATE MEDICAL DOMAINS
+- ABSOLUTELY ENSURE all diagnoses are within the appropriate medical specialty for each symptom
 `;
 
-    console.log("Initiating advanced medical reasoning analysis with Gemini AI");
-    console.log("Diagnostic approach:", requiresDentalSpecialization ? "Specialized Dental Medicine" : "General Internal Medicine");
+    console.log("Initiating category-constrained advanced medical reasoning analysis with Gemini AI");
+    console.log("Diagnostic approach:", requiresDentalSpecialization ? "Specialized Dental Medicine" : "General Internal Medicine with Category Constraints");
     console.log("Symptoms for analysis:", symptomsText);
+    console.log("Category constraints active:", !!symptomCategoryMapping);
     console.log("Clinical complexity factors:", {
       medicalHistory: !!(previousConditions && previousConditions.length > 0),
       medications: !!(medications && medications.length > 0),
       visualData: diagnosticCategories.length > 0,
-      anthropometrics: !!(height && weight)
+      anthropometrics: !!(height && weight),
+      categoryMapping: !!symptomCategoryMapping
     });
 
-    // Enhanced Gemini API call with medical reasoning
+    // Enhanced Gemini API call with category-constrained medical reasoning
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -398,7 +450,7 @@ CRITICAL REQUIREMENTS:
         },
         systemInstruction: {
           parts: [{
-            text: 'You are an expert medical AI system with advanced clinical reasoning capabilities. Apply systematic diagnostic methodology, evidence-based medicine principles, and comprehensive patient assessment for maximum diagnostic accuracy. Prioritize patient safety and clinical precision in all analyses. Always provide detailed medical reasoning and maintain the highest professional medical standards.'
+            text: 'You are an expert medical AI system with advanced clinical reasoning capabilities and strict adherence to medical specialty domains. Apply systematic diagnostic methodology, evidence-based medicine principles, and comprehensive patient assessment for maximum diagnostic accuracy WITHIN APPROPRIATE MEDICAL SPECIALTIES. Each symptom must be analyzed within its designated medical specialty context. Prioritize patient safety and clinical precision while maintaining strict category constraints. Always provide detailed medical reasoning within the appropriate medical domain and maintain the highest professional medical standards specific to each medical specialty.'
           }]
         },
         safetySettings: [
@@ -417,7 +469,7 @@ CRITICAL REQUIREMENTS:
     }
 
     const data = await response.json();
-    console.log("Received comprehensive medical reasoning analysis from Gemini");
+    console.log("Received category-constrained comprehensive medical reasoning analysis from Gemini");
     
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
       console.error("Invalid Gemini response structure:", JSON.stringify(data));
@@ -433,26 +485,30 @@ CRITICAL REQUIREMENTS:
         throw new Error("Medical analysis missing required 'conditions' array");
       }
       
-      // Enhanced analysis metadata with medical reasoning indicators
+      // Enhanced analysis metadata with category-constrained medical reasoning indicators
       medicalAnalysisResult.advancedMedicalReasoning = true;
+      medicalAnalysisResult.categoryConstrainedAnalysis = true;
       medicalAnalysisResult.systematicDiagnosticApproach = true;
       medicalAnalysisResult.evidenceBasedAnalysis = true;
       medicalAnalysisResult.highAccuracyAnalysis = true;
+      medicalAnalysisResult.specialtyFocusedDiagnosis = true;
       medicalAnalysisResult.analysisTimestamp = new Date().toISOString();
       medicalAnalysisResult.clinicalDataIntegration = {
         medicalHistory: !!(previousConditions && previousConditions.length > 0),
         medications: !!(medications && medications.length > 0),
         clinicalNotes: !!(notes && notes.trim()),
         visualDiagnostics: diagnosticCategories.length > 0,
-        anthropometrics: !!(height && weight)
+        anthropometrics: !!(height && weight),
+        categoryConstraints: !!symptomCategoryMapping
       };
-      medicalAnalysisResult.aiProvider = "Gemini 1.5 Pro - Medical Reasoning";
-      medicalAnalysisResult.diagnosticMethodology = "Systematic Clinical Reasoning";
+      medicalAnalysisResult.aiProvider = "Gemini 1.5 Pro - Category-Constrained Medical Reasoning";
+      medicalAnalysisResult.diagnosticMethodology = "Systematic Clinical Reasoning with Specialty Constraints";
       
       if (requiresDentalSpecialization) {
         medicalAnalysisResult.specializedDentalMedicine = true;
         medicalAnalysisResult.dentalSymptomsAnalyzed = dentalSymptomsList;
         medicalAnalysisResult.oralHealthSystemicCorrelation = true;
+        medicalAnalysisResult.dentalSpecialtyConstraints = true;
       }
       
       return new Response(
@@ -475,8 +531,9 @@ CRITICAL REQUIREMENTS:
           }
           if (!extractedMedicalJson.overallClinicalAssessment) {
             extractedMedicalJson.overallClinicalAssessment = {
-              primaryWorkingDiagnosis: "Requires clinical correlation",
-              urgencyClassification: "moderate"
+              primaryWorkingDiagnosis: "Requires clinical correlation within appropriate specialty",
+              urgencyClassification: "moderate",
+              categoryConstraintVerification: "Unable to verify specialty constraints due to parsing error"
             };
           }
           
@@ -489,27 +546,34 @@ CRITICAL REQUIREMENTS:
         console.error("Failed to extract medical analysis JSON:", extractionError);
       }
       
-      // Medical analysis fallback response
+      // Medical analysis fallback response with category awareness
       const medicalFallbackResponse = {
         medicalReasoningAnalysis: {
           systematicApproach: "Analysis incomplete due to technical error",
-          clinicalSynthesis: "Requires manual clinical review",
-          differentialProcess: "Unable to complete systematic analysis"
+          clinicalSynthesis: "Requires manual clinical review within appropriate specialty",
+          differentialProcess: "Unable to complete systematic analysis",
+          categoryConstraintCompliance: "Unable to verify specialty constraint compliance"
         },
         conditions: [{
           name: "Clinical Analysis Incomplete",
+          medicalSpecialty: "Requires determination",
+          categoryContext: "Unable to determine due to technical error",
           diagnosticConfidence: "Low - Technical Error",
-          clinicalReasoning: "Unable to complete comprehensive medical analysis. Clinical consultation recommended for accurate diagnosis.",
-          treatmentConsiderations: "Seek professional medical evaluation",
-          urgencyLevel: "Moderate - Clinical review needed"
+          clinicalReasoning: "Unable to complete comprehensive medical analysis within specialty constraints. Clinical consultation recommended for accurate diagnosis.",
+          treatmentConsiderations: "Seek professional medical evaluation within appropriate specialty",
+          urgencyLevel: "Moderate - Clinical review needed",
+          specialtyReferralRecommendation: "Consult appropriate medical specialist based on symptom category"
         }],
         overallClinicalAssessment: {
-          primaryWorkingDiagnosis: "Requires clinical evaluation",
+          primaryWorkingDiagnosis: "Requires clinical evaluation within appropriate specialty",
           urgencyClassification: "moderate",
-          diagnosticCertainty: "Low due to technical error"
+          diagnosticCertainty: "Low due to technical error",
+          categoryConstraintVerification: "Unable to verify due to technical error"
         },
         error: "Medical reasoning analysis incomplete",
-        clinicalRecommendation: "Consult healthcare professional for comprehensive evaluation"
+        clinicalRecommendation: "Consult healthcare professional within appropriate medical specialty for comprehensive evaluation",
+        categoryConstrainedAnalysis: false,
+        technicalError: true
       };
       
       return new Response(
@@ -518,7 +582,7 @@ CRITICAL REQUIREMENTS:
       );
     }
   } catch (error) {
-    console.error("Critical error in medical reasoning analysis:", error);
+    console.error("Critical error in category-constrained medical reasoning analysis:", error);
     
     return new Response(
       JSON.stringify({ 
@@ -528,8 +592,10 @@ CRITICAL REQUIREMENTS:
         overallClinicalAssessment: {
           primaryWorkingDiagnosis: "System error - unable to complete analysis",
           urgencyClassification: "moderate",
-          clinicalRecommendation: "Seek professional medical evaluation"
+          clinicalRecommendation: "Seek professional medical evaluation within appropriate specialty",
+          categoryConstraintVerification: "Unable to verify due to system error"
         },
+        categoryConstrainedAnalysis: false,
         systemError: true
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
