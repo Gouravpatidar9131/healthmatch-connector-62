@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -15,7 +16,18 @@ serve(async (req) => {
   }
 
   try {
-    const { symptoms, severity, duration, symptomDetails, previousConditions, medications, notes } = await req.json();
+    const { 
+      symptoms, 
+      severity, 
+      duration, 
+      height, 
+      weight, 
+      symptomDetails, 
+      previousConditions, 
+      medications, 
+      notes,
+      analysisInstructions
+    } = await req.json();
 
     if (!symptoms || symptoms.length === 0) {
       return new Response(
@@ -31,163 +43,225 @@ serve(async (req) => {
       );
     }
 
-    // Format the symptoms for the AI
+    // Enhanced symptom categorization and analysis
     const symptomsText = symptoms.join(", ");
-    const severityInfo = severity ? `The symptoms are ${severity} in severity.` : "";
-    const durationInfo = duration ? `The symptoms have been present for ${duration}.` : "";
+    const severityInfo = severity ? `Symptom severity: ${severity}` : "";
+    const durationInfo = duration ? `Duration: ${duration}` : "";
     
-    // Format additional medical information
+    // Enhanced BMI and physical assessment
+    let physicalAssessment = "";
+    if (height && weight) {
+      const heightInMeters = height / 100;
+      const bmi = weight / (heightInMeters * heightInMeters);
+      let bmiCategory = "";
+      
+      if (bmi < 18.5) bmiCategory = "Underweight";
+      else if (bmi < 25) bmiCategory = "Normal weight";
+      else if (bmi < 30) bmiCategory = "Overweight";
+      else bmiCategory = "Obese";
+      
+      physicalAssessment = `\n\nPHYSICAL ASSESSMENT:\nHeight: ${height}cm, Weight: ${weight}kg\nBMI: ${bmi.toFixed(1)} (${bmiCategory})\nPhysical factors that may influence diagnosis and treatment.`;
+    }
+    
+    // Comprehensive medical history analysis
     let medicalHistoryText = "";
     if (previousConditions && previousConditions.length > 0) {
-      medicalHistoryText += `\n\nPREVIOUS MEDICAL CONDITIONS: ${previousConditions.join(", ")}`;
+      medicalHistoryText = `\n\nMEDICAL HISTORY:\n${previousConditions.join(", ")}\nAnalyze how these conditions may interact with current symptoms.`;
     }
     
     let medicationsText = "";
     if (medications && medications.length > 0) {
-      medicationsText += `\n\nCURRENT MEDICATIONS: ${medications.join(", ")}`;
+      medicationsText = `\n\nCURRENT MEDICATIONS:\n${medications.join(", ")}\nConsider drug interactions, side effects, and therapeutic implications.`;
     }
     
     let notesText = "";
     if (notes && notes.trim()) {
-      notesText += `\n\nADDITIONAL NOTES: ${notes}`;
-    }
-    
-    // Enhanced photo analysis section
-    let photoAnalysisText = "";
-    let hasDetailedVisualAnalysis = false;
-    let photoAnalysisDetails = {};
-    
-    if (symptomDetails && symptomDetails.some(s => s.photo)) {
-      photoAnalysisText = "\n\nVisual symptoms from uploaded photos include: \n";
-      
-      // Map photos to their corresponding symptoms for better context
-      const eyeSymptoms = symptomDetails.filter(s => s.photo && isEyeSymptom(s.name));
-      const skinSymptoms = symptomDetails.filter(s => s.photo && isSkinSymptom(s.name));
-      
-      // Detailed analysis for eye symptoms
-      if (eyeSymptoms.length > 0) {
-        hasDetailedVisualAnalysis = true;
-        photoAnalysisText += "\nEYE SYMPTOMS WITH PHOTOS:\n";
-        photoAnalysisDetails["eyeAnalysis"] = {
-          count: eyeSymptoms.length,
-          symptoms: eyeSymptoms.map(s => s.name)
-        };
-        
-        eyeSymptoms.forEach(s => {
-          photoAnalysisText += `- ${s.name}: Photo provided shows possible eye condition\n`;
-        });
-        
-        photoAnalysisText += "\nFor eye symptoms, analyze the following visual characteristics in detail:\n";
-        photoAnalysisText += "1. Redness: Is there visible inflammation or blood vessel dilation in the sclera (white part)?\n";
-        photoAnalysisText += "2. Discharge: Is there any visible discharge or crusting around the eye?\n";
-        photoAnalysisText += "3. Corneal appearance: Is the cornea clear or cloudy?\n";
-        photoAnalysisText += "4. Pupil: Are pupils normal size, dilated, or constricted?\n";
-        photoAnalysisText += "5. Eyelid: Is there swelling, drooping, or abnormal positioning?\n";
-        photoAnalysisText += "6. Conjunctiva: Is the conjunctiva inflamed, swollen, or discolored?\n";
-        photoAnalysisText += "7. Overall appearance: Are there any visible lesions, growths, or structural abnormalities?\n";
-      }
-      
-      // Detailed analysis for skin symptoms
-      if (skinSymptoms.length > 0) {
-        hasDetailedVisualAnalysis = true;
-        photoAnalysisText += "\n\nSKIN SYMPTOMS WITH PHOTOS:\n";
-        photoAnalysisDetails["skinAnalysis"] = {
-          count: skinSymptoms.length,
-          symptoms: skinSymptoms.map(s => s.name)
-        };
-        
-        skinSymptoms.forEach(s => {
-          photoAnalysisText += `- ${s.name}: Photo provided shows skin condition\n`;
-        });
-        
-        photoAnalysisText += "\nFor skin symptoms, analyze the following visual characteristics in detail:\n";
-        photoAnalysisText += "1. Color: What is the coloration of the affected area (red, brown, purple, etc.)?\n";
-        photoAnalysisText += "2. Pattern: Is there a specific pattern or distribution (localized, widespread, linear, circular)?\n";
-        photoAnalysisText += "3. Texture: Is the skin raised, flat, rough, scaly, or smooth?\n";
-        photoAnalysisText += "4. Borders: Are the borders well-defined or irregular?\n";
-        photoAnalysisText += "5. Associated features: Is there visible swelling, blistering, oozing, or crusting?\n";
-        photoAnalysisText += "6. Distribution: Where on the body is the condition and how extensive is it?\n";
-        photoAnalysisText += "7. Specific lesion type: Identify if these are macules, papules, pustules, plaques, or other lesion types.\n";
-      }
-      
-      // Add info for other symptoms with photos
-      const otherSymptoms = symptomDetails.filter(s => s.photo && !isEyeSymptom(s.name) && !isSkinSymptom(s.name));
-      if (otherSymptoms.length > 0) {
-        photoAnalysisText += "\n\nOTHER SYMPTOMS WITH PHOTOS:\n";
-        photoAnalysisDetails["otherAnalysis"] = {
-          count: otherSymptoms.length,
-          symptoms: otherSymptoms.map(s => s.name)
-        };
-        
-        otherSymptoms.forEach(s => {
-          photoAnalysisText += `- ${s.name}: Photo provided for symptom analysis\n`;
-        });
-      }
-      
-      photoAnalysisText += "\n\nThe photos show visible symptoms which have been considered in this analysis.";
+      notesText = `\n\nADDITIONAL CLINICAL NOTES:\n${notes}\nImportant contextual information for diagnosis.`;
     }
 
-    // Create the enhanced prompt for the AI with medical history context
-    const prompt = `
-      As a medical AI assistant specializing in comprehensive health analysis, analyze the following patient information and provide possible conditions:
+    // Advanced photo analysis for visual symptoms
+    let photoAnalysisText = "";
+    let visualDiagnosticFeatures = [];
+    
+    if (symptomDetails && symptomDetails.some(s => s.photo)) {
+      photoAnalysisText = "\n\nVISUAL SYMPTOM ANALYSIS:\n";
       
-      CURRENT SYMPTOMS: ${symptomsText}
+      // Categorize symptoms with photos
+      const eyeSymptoms = symptomDetails.filter(s => s.photo && isEyeSymptom(s.name));
+      const skinSymptoms = symptomDetails.filter(s => s.photo && isSkinSymptom(s.name));
+      const dentalSymptoms = symptomDetails.filter(s => s.photo && isDentalSymptom(s.name));
+      
+      if (eyeSymptoms.length > 0) {
+        photoAnalysisText += "\nOCULAR EXAMINATION FINDINGS:\n";
+        eyeSymptoms.forEach(s => {
+          photoAnalysisText += `- ${s.name}: Visual examination shows ocular pathology\n`;
+        });
+        photoAnalysisText += "DETAILED OCULAR ASSESSMENT:\n";
+        photoAnalysisText += "• Conjunctival injection patterns (bacterial vs viral vs allergic)\n";
+        photoAnalysisText += "• Corneal clarity and surface irregularities\n";
+        photoAnalysisText += "• Pupillary responses and symmetry\n";
+        photoAnalysisText += "• Eyelid positioning and ptosis assessment\n";
+        photoAnalysisText += "• Discharge characteristics (purulent, serous, mucopurulent)\n";
+        photoAnalysisText += "• Periorbital edema and erythema patterns\n";
+        visualDiagnosticFeatures.push("ocular_examination");
+      }
+      
+      if (skinSymptoms.length > 0) {
+        photoAnalysisText += "\nDERMATOLOGICAL EXAMINATION:\n";
+        skinSymptoms.forEach(s => {
+          photoAnalysisText += `- ${s.name}: Dermatological lesion identified\n`;
+        });
+        photoAnalysisText += "COMPREHENSIVE SKIN ANALYSIS:\n";
+        photoAnalysisText += "• Morphological classification (macule, papule, plaque, nodule, vesicle)\n";
+        photoAnalysisText += "• Color variations and pigmentation patterns\n";
+        photoAnalysisText += "• Distribution patterns (symmetric, unilateral, dermatomal)\n";
+        photoAnalysisText += "• Border characteristics (well-demarcated vs irregular)\n";
+        photoAnalysisText += "• Surface texture and scaling patterns\n";
+        photoAnalysisText += "• Associated features (inflammation, secondary changes)\n";
+        visualDiagnosticFeatures.push("dermatological_examination");
+      }
+      
+      if (dentalSymptoms.length > 0) {
+        photoAnalysisText += "\nORAL AND DENTAL EXAMINATION:\n";
+        dentalSymptoms.forEach(s => {
+          photoAnalysisText += `- ${s.name}: Oral pathology documented\n`;
+        });
+        photoAnalysisText += "COMPREHENSIVE ORAL ASSESSMENT:\n";
+        photoAnalysisText += "• Dental caries classification and extent\n";
+        photoAnalysisText += "• Periodontal status (gingivitis, periodontitis staging)\n";
+        photoAnalysisText += "• Oral mucosal lesions and their characteristics\n";
+        photoAnalysisText += "• Occlusal relationships and malocclusion patterns\n";
+        photoAnalysisText += "• Gingival inflammation and bleeding indices\n";
+        photoAnalysisText += "• Hard and soft tissue abnormalities\n";
+        photoAnalysisText += "• TMJ dysfunction indicators\n";
+        visualDiagnosticFeatures.push("oral_dental_examination");
+      }
+    }
+
+    // Determine if specialized dental analysis is needed
+    const hasDentalSymptoms = analysisInstructions?.specialFocus === 'dental';
+    const dentalSymptomsList = analysisInstructions?.dentalSymptoms || [];
+
+    // Create enhanced medical analysis prompt for high accuracy diagnosis
+    const prompt = `
+      You are an advanced AI medical diagnostic system with expertise in comprehensive clinical analysis. Your goal is to provide highly accurate diagnostic assessments with 85-95% confidence levels through systematic medical reasoning.
+
+      PATIENT PRESENTATION:
+      PRIMARY SYMPTOMS: ${symptomsText}
       ${severityInfo}
       ${durationInfo}
+      ${physicalAssessment}
       ${photoAnalysisText}
       ${medicalHistoryText}
       ${medicationsText}
       ${notesText}
+
+      ${hasDentalSymptoms ? `
+      SPECIALIZED DENTAL ANALYSIS REQUIRED:
+      Dental symptoms present: ${dentalSymptomsList.join(", ")}
       
-      IMPORTANT ANALYSIS CONSIDERATIONS:
-      1. Consider how previous medical conditions might influence current symptoms
-      2. Evaluate potential drug interactions or medication side effects that could contribute to symptoms
-      3. Factor in the patient's additional notes for context about symptom onset, triggers, or patterns
-      4. Assess if current symptoms could be related to existing conditions or complications
-      ${hasDetailedVisualAnalysis ? "5. Pay special attention to visual symptoms where photos were provided. For eye conditions, examine for redness, discharge, swelling, or abnormal appearance. For skin conditions, look for patterns, coloration, texture, and distribution of the affected areas." : ""}
-      
+      DENTAL DIAGNOSTIC APPROACH:
+      • Apply systematic dental examination principles
+      • Consider dental pathophysiology and etiology
+      • Evaluate periodontal, endodontic, and oral surgical conditions
+      • Assess orthodontic and prosthodontic factors
+      • Include oral medicine and pathology considerations
+      • Analyze temporomandibular joint disorders
+      • Consider pediatric dental conditions if applicable
+      ` : ''}
+
+      ADVANCED DIAGNOSTIC METHODOLOGY:
+      1. SYMPTOM PATTERN RECOGNITION:
+         - Analyze symptom clusters and syndromes
+         - Identify pathognomonic signs and cardinal symptoms
+         - Evaluate symptom progression and temporal patterns
+         - Consider anatomical and physiological correlations
+
+      2. DIFFERENTIAL DIAGNOSIS FRAMEWORK:
+         - Apply systematic diagnostic reasoning
+         - Consider epidemiological factors (age, gender, demographics)
+         - Evaluate risk factors and predisposing conditions
+         - Rule out red flag conditions and emergencies
+
+      3. EVIDENCE-BASED ANALYSIS:
+         - Integrate clinical presentation with medical literature
+         - Apply diagnostic criteria and clinical guidelines
+         - Consider sensitivity and specificity of findings
+         - Evaluate pre-test and post-test probabilities
+
+      4. COMPREHENSIVE ASSESSMENT:
+         - Analyze interactions between symptoms, medications, and comorbidities
+         - Consider medication side effects and drug interactions
+         - Evaluate impact of BMI and physical parameters
+         - Assess psychological and social factors
+
+      5. DIAGNOSTIC ACCURACY OPTIMIZATION:
+         - Provide confidence intervals for each diagnosis
+         - Explain diagnostic reasoning and clinical correlation
+         - Identify key differentiating features
+         - Suggest confirmatory tests or examinations
+
+      REQUIRED OUTPUT FORMAT:
       For each potential condition, provide:
-      1. Name of the condition
-      2. A detailed description including how it relates to the patient's medical history
-      3. Which symptoms match this condition
-      4. How previous conditions or medications might influence this diagnosis
-      5. A confidence score (percentage) considering all patient information
-      6. Recommended actions or treatments (considering existing medications and conditions)
-      7. When to seek immediate medical attention
-      8. Drug interaction warnings if relevant
-      
-      ${hasDetailedVisualAnalysis ? "For conditions diagnosed based on photos, explain clearly which visual characteristics led to this diagnosis and include a 'visualDiagnosticFeatures' section listing specific visual markers that support this diagnosis." : ""}
-      
-      Return the top 3 most likely conditions in JSON format like this:
+      1. Condition name with ICD-10 classification if applicable
+      2. Detailed pathophysiological explanation
+      3. Symptom correlation analysis (explain why each symptom fits)
+      4. Diagnostic confidence score (70-95% based on symptom match)
+      5. Clinical reasoning and differential diagnosis
+      6. Risk stratification and urgency assessment
+      7. Recommended diagnostic workup
+      8. Treatment considerations and contraindications
+      9. Prognosis and follow-up recommendations
+      10. Patient education points
+
+      ${visualDiagnosticFeatures.length > 0 ? `
+      VISUAL DIAGNOSTIC INTEGRATION:
+      - Incorporate findings from ${visualDiagnosticFeatures.join(", ")}
+      - Explain how visual findings support or modify diagnosis
+      - Describe specific visual markers that confirm diagnosis
+      ` : ''}
+
+      Return ONLY valid JSON in this exact format:
       {
         "conditions": [
           {
-            "name": "Condition Name",
-            "description": "Detailed description including visual characteristics, relationship to medical history, and symptoms",
+            "name": "Primary Diagnosis Name",
+            "icd10Code": "ICD-10 code if applicable",
+            "description": "Comprehensive pathophysiological explanation including etiology, pathogenesis, and clinical course",
             "matchedSymptoms": ["symptom1", "symptom2"],
-            "matchScore": 85,
-            "recommendedActions": ["action1", "action2", "action3"],
-            "seekMedicalAttention": "When to see a doctor immediately",
-            "medicalHistoryRelevance": "How this relates to previous conditions",
-            "medicationConsiderations": "Drug interactions or medication-related factors",
-            "visualDiagnosticFeatures": ["feature1", "feature2"] // Only for photo-based diagnoses
+            "symptomCorrelation": "Detailed explanation of how each symptom correlates with this condition",
+            "matchScore": 90,
+            "diagnosticConfidence": "High (85-95%)",
+            "clinicalReasoning": "Step-by-step diagnostic reasoning process",
+            "differentialDiagnosis": ["Alternative diagnosis 1", "Alternative diagnosis 2"],
+            "riskFactors": ["risk factor 1", "risk factor 2"],
+            "diagnosticWorkup": ["recommended test 1", "recommended test 2"],
+            "recommendedActions": ["immediate action 1", "treatment option 2"],
+            "treatmentConsiderations": "Detailed treatment approach with contraindications",
+            "seekMedicalAttention": "Specific timeframe and red flag symptoms",
+            "prognosis": "Expected clinical course and outcomes",
+            "patientEducation": ["education point 1", "education point 2"],
+            "medicalHistoryRelevance": "How medical history influences this diagnosis",
+            "medicationConsiderations": "Drug interactions and medication adjustments",
+            ${visualDiagnosticFeatures.length > 0 ? '"visualDiagnosticFeatures": ["visual finding 1", "visual finding 2"],' : ''}
+            "followUpRecommendations": "Specific follow-up timeline and monitoring"
           }
         ],
-        "overallAssessment": "Summary considering all patient information including medical history and medications",
-        "urgencyLevel": "low/moderate/high",
-        "photoAnalysisMethod": "Description of the visual analysis method used for photos" // Only when photos are analyzed
+        "overallAssessment": "Comprehensive clinical summary with primary working diagnosis",
+        "urgencyLevel": "low/moderate/high/emergency",
+        "diagnosticAccuracy": "Overall diagnostic confidence percentage",
+        "clinicalPearls": ["important clinical insight 1", "important clinical insight 2"],
+        "redFlags": ["warning sign 1", "warning sign 2"],
+        ${hasDentalSymptoms ? '"dentalSpecialistReferral": "Specific dental specialty recommendation",' : ''}
+        "systematicReview": "Brief review of systems considerations"
       }
-      
-      The JSON should be properly formatted without any non-JSON content before or after.
     `;
 
-    console.log("Sending comprehensive analysis request to Groq API");
-    console.log("Symptoms:", symptomsText);
-    console.log("Previous conditions:", previousConditions);
-    console.log("Medications:", medications);
-    console.log("Has photo analysis:", hasDetailedVisualAnalysis);
+    console.log("Sending high-accuracy diagnostic analysis to Groq API");
+    console.log("Analysis type:", hasDentalSymptoms ? "Specialized Dental" : "General Medical");
+    console.log("Symptoms analyzed:", symptomsText);
 
-    // Call Groq API with enhanced prompt
+    // Call Groq API with enhanced diagnostic prompt
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -195,15 +269,16 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'llama3-70b-8192', // Using more powerful model for better accuracy
         messages: [
           { 
             role: 'system', 
-            content: 'You are a comprehensive medical AI assistant that considers complete patient history including previous conditions, medications, and additional notes for accurate diagnosis. When photos of visual symptoms are provided, perform detailed analysis. Always return valid JSON format with no additional text.' 
+            content: 'You are an expert medical AI with advanced diagnostic capabilities. Provide highly accurate medical diagnoses with detailed clinical reasoning. Always return valid JSON format with comprehensive medical analysis. Focus on diagnostic accuracy and evidence-based medicine principles.' 
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.2,
+        temperature: 0.1, // Lower temperature for more consistent, accurate responses
+        max_tokens: 4000,
         response_format: { type: "json_object" }
       }),
     });
@@ -215,7 +290,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log("Received enhanced analysis response from Groq");
+    console.log("Received high-accuracy diagnostic analysis from Groq");
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error("Unexpected response structure:", JSON.stringify(data));
@@ -231,17 +306,20 @@ serve(async (req) => {
         throw new Error("Response missing expected 'conditions' array");
       }
       
-      // Add analysis metadata
-      if (hasDetailedVisualAnalysis) {
-        analysisResult.visualAnalysisIncluded = true;
-        analysisResult.photoAnalysisDetails = photoAnalysisDetails;
-      }
-      
-      // Add comprehensive analysis flag
+      // Enhanced analysis metadata
       analysisResult.comprehensiveAnalysis = true;
+      analysisResult.highAccuracyAnalysis = true;
+      analysisResult.analysisTimestamp = new Date().toISOString();
       analysisResult.includedMedicalHistory = !!(previousConditions && previousConditions.length > 0);
       analysisResult.includedMedications = !!(medications && medications.length > 0);
       analysisResult.includedNotes = !!(notes && notes.trim());
+      analysisResult.visualAnalysisIncluded = visualDiagnosticFeatures.length > 0;
+      analysisResult.bmiAnalysisIncluded = !!(height && weight);
+      
+      if (hasDentalSymptoms) {
+        analysisResult.specializedDentalAnalysis = true;
+        analysisResult.dentalSymptomsAnalyzed = dentalSymptomsList;
+      }
       
       return new Response(
         JSON.stringify(analysisResult),
@@ -251,10 +329,17 @@ serve(async (req) => {
       console.error("Error parsing JSON from AI response:", jsonError);
       console.error("AI response was:", aiResponse);
       
+      // Enhanced JSON extraction with better error handling
       try {
         const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const extractedJson = JSON.parse(jsonMatch[0]);
+          
+          // Ensure minimum required structure
+          if (!extractedJson.conditions) {
+            extractedJson.conditions = [];
+          }
+          
           return new Response(
             JSON.stringify(extractedJson),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -264,22 +349,41 @@ serve(async (req) => {
         console.error("Failed to extract JSON:", extractError);
       }
       
-      throw new Error("Could not parse valid JSON from AI response");
+      // Fallback response structure
+      const fallbackResponse = {
+        conditions: [{
+          name: "Analysis Error",
+          description: "Unable to complete comprehensive analysis. Please consult a healthcare professional.",
+          matchScore: 0,
+          diagnosticConfidence: "Low",
+          seekMedicalAttention: "Consult a healthcare professional for proper evaluation"
+        }],
+        overallAssessment: "Analysis incomplete due to technical error",
+        urgencyLevel: "moderate",
+        error: "Analysis parsing failed"
+      };
+      
+      return new Response(
+        JSON.stringify(fallbackResponse),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
   } catch (error) {
-    console.error("Error in enhanced analyze-symptoms function:", error);
+    console.error("Error in high-accuracy analyze-symptoms function:", error);
     
     return new Response(
       JSON.stringify({ 
         error: error.message || "An unknown error occurred",
-        fallback: true 
+        fallback: true,
+        conditions: [],
+        overallAssessment: "Unable to complete analysis due to system error"
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
-// Helper functions to categorize symptoms
+// Enhanced helper functions for symptom categorization
 function isEyeSymptom(symptom: string): boolean {
   const eyeSymptoms = [
     "Blurry vision", "Eye redness", "Eye pain", "Dry eyes", 
@@ -295,4 +399,30 @@ function isSkinSymptom(symptom: string): boolean {
     "Sores", "Changes in mole"
   ];
   return skinSymptoms.includes(symptom);
+}
+
+function isDentalSymptom(symptom: string): boolean {
+  const dentalSymptoms = [
+    // General Dental
+    "Tooth pain", "Gum bleeding", "Tooth sensitivity", "Bad breath", "Loose teeth", "Jaw pain", "Tooth decay", "Gum swelling", "Cracked tooth", "Wisdom tooth pain",
+    // Oral Medicine and Radiology
+    "Mouth ulcers", "Oral lesions", "Tongue pain", "Dry mouth", "Burning mouth sensation", "Oral infections",
+    // Oral and Maxillofacial Surgery
+    "Facial swelling", "Jaw stiffness", "TMJ disorders", "Facial trauma", "Impacted teeth", "Oral cysts",
+    // Oral Pathology and Oral Microbiology  
+    "White patches in mouth", "Red patches in mouth", "Oral cancer symptoms", "Unusual growths in mouth", "Recurring mouth infections",
+    // Prosthodontics and Crown & Bridge
+    "Denture problems", "Crown pain", "Bridge discomfort", "Missing teeth", "Bite problems", "Chewing difficulties",
+    // Conservative Dentistry and Endodontics
+    "Root canal pain", "Filling sensitivity", "Cavity pain", "Tooth nerve pain", "Post-treatment sensitivity",
+    // Pediatric & Preventive Dentistry
+    "Children's dental pain", "Teething problems", "Dental development issues", "Early childhood caries",
+    // Periodontology
+    "Gum disease", "Gum recession", "Periodontal pockets", "Gum inflammation", "Plaque buildup", "Tartar formation",
+    // Public Health Dentistry
+    "Oral hygiene issues", "Preventive care needs", "Community dental problems",
+    // Orthodontics & Dentofacial Orthopedics
+    "Crooked teeth", "Overbite", "Underbite", "Crossbite", "Spacing issues", "Jaw alignment problems", "Braces pain"
+  ];
+  return dentalSymptoms.includes(symptom);
 }
