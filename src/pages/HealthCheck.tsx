@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ import {
   X
 } from "lucide-react";
 
-const SYMPTOM_CATEGORIES = {
+const symptomCategories = {
   "Heart & Circulation": {
     icon: Heart,
     symptoms: ["Chest pain", "Shortness of breath", "Heart palpitations", "Dizziness", "Fainting", "Swelling in legs"]
@@ -66,7 +67,7 @@ const SYMPTOM_CATEGORIES = {
 
 const HealthCheck = () => {
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [symptomCategoryMap, setSymptomCategoryMap] = useState<Record<string, string>>({});
+  const [symptomCategories, setSymptomCategories] = useState<Record<string, string>>({});
   const [severity, setSeverity] = useState("");
   const [duration, setDuration] = useState("");
   const [notes, setNotes] = useState("");
@@ -77,12 +78,12 @@ const HealthCheck = () => {
   const handleSymptomSelect = (symptom: string, category: string) => {
     if (selectedSymptoms.includes(symptom)) {
       setSelectedSymptoms(selectedSymptoms.filter(s => s !== symptom));
-      const newCategories = { ...symptomCategoryMap };
+      const newCategories = { ...symptomCategories };
       delete newCategories[symptom];
-      setSymptomCategoryMap(newCategories);
+      setSymptomCategories(newCategories);
     } else {
       setSelectedSymptoms([...selectedSymptoms, symptom]);
-      setSymptomCategoryMap({ ...symptomCategoryMap, [symptom]: category });
+      setSymptomCategories({ ...symptomCategories, [symptom]: category });
     }
   };
 
@@ -146,7 +147,7 @@ const HealthCheck = () => {
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-symptoms', {
         body: {
           symptoms: selectedSymptoms,
-          symptomCategories: symptomCategoryMap,
+          symptomCategories: symptomCategories,
           severity,
           duration,
           notes,
@@ -181,7 +182,7 @@ const HealthCheck = () => {
 
       // Reset form
       setSelectedSymptoms([]);
-      setSymptomCategoryMap({});
+      setSymptomCategories({});
       setSeverity("");
       setDuration("");
       setNotes("");
@@ -210,7 +211,7 @@ const HealthCheck = () => {
 
       {/* Symptom Categories */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(SYMPTOM_CATEGORIES).map(([category, { icon: Icon, symptoms }]) => (
+        {Object.entries(symptomCategories).map(([category, { icon: Icon, symptoms }]) => (
           <Card key={category} className="h-full">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -249,7 +250,7 @@ const HealthCheck = () => {
                   {symptom}
                   <X
                     className="h-3 w-3 cursor-pointer"
-                    onClick={() => handleSymptomSelect(symptom, symptomCategoryMap[symptom])}
+                    onClick={() => handleSymptomSelect(symptom, symptomCategories[symptom])}
                   />
                 </Badge>
               ))}
