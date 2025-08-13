@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, FileText, Users, Clock, Award, AlertTriangle, Phone, Mail } from "lucide-react";
+import { Briefcase, FileText, Users, Clock, Award, AlertTriangle, Phone, Mail, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -173,6 +173,33 @@ const InternshipTerms = () => {
             </p>
             <p className="text-slate-700">
               <strong>Non-Disclosure:</strong> Confidentiality obligations continue beyond the internship period and are binding for a period of 2 years post-completion.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Limitation of Liability */}
+        <Card className="modern-card mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <Shield className="h-6 w-6 text-slate-600" />
+              Limitation of Liability
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-slate-700">
+              <strong>General Limitation:</strong> Curezy shall not be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising out of or relating to the intern's participation in the internship program.
+            </p>
+            <p className="text-slate-700">
+              <strong>Scope of Limitation:</strong> This limitation includes, but is not limited to, damages for loss of profits, data, use, goodwill, or other intangible losses, even if Curezy has been advised of the possibility of such damages.
+            </p>
+            <p className="text-slate-700">
+              <strong>Personal Responsibility:</strong> Interns participate in the program at their own risk and are responsible for their own actions, decisions, and any consequences arising therefrom during the internship period.
+            </p>
+            <p className="text-slate-700">
+              <strong>Maximum Liability:</strong> In no event shall Curezy's total liability to any intern exceed the total amount of stipend paid to that intern during the internship period.
+            </p>
+            <p className="text-slate-700 text-sm">
+              <em>Note: This limitation of liability clause does not exclude liability for death or personal injury caused by negligence, fraud, or other matters where liability cannot be excluded or limited by applicable law.</em>
             </p>
           </CardContent>
         </Card>
