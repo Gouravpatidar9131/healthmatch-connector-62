@@ -1,13 +1,10 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, FileText, Users, Clock, Award, AlertTriangle, Phone, Mail, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-
 const InternshipTerms = () => {
-  return (
-    <div className="min-h-screen bg-slate-50 py-12">
+  return <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-4xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-12">
@@ -26,9 +23,7 @@ const InternshipTerms = () => {
         {/* Back to Home Button */}
         <div className="mb-8">
           <Link to="/">
-            <Button variant="outline" className="flex items-center gap-2">
-              ← Back to Home
-            </Button>
+            
           </Link>
         </div>
 
@@ -280,8 +275,6 @@ const InternshipTerms = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default InternshipTerms;
