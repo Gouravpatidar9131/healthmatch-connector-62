@@ -39,6 +39,7 @@ interface HealthCheckData {
   height?: string;
   weight?: string;
   data?: any; // For handling new API response format
+  conditions?: any[]; // For direct conditions array format
 }
 
 const HealthCheckResults = () => {
@@ -65,16 +66,44 @@ const HealthCheckResults = () => {
   // Handle new API response format - extract conditions from data if available
   if (healthCheckData.data && healthCheckData.data.conditions) {
     healthCheckData.analysis_results = healthCheckData.data.conditions.map((condition: any) => ({
-      name: condition.name,
-      description: condition.clinicalReasoning || condition.description || 'Clinical assessment pending',
-      matchedSymptoms: condition.matchedSymptoms || healthCheckData.symptoms || [],
-      matchScore: condition.diagnosticScore || 50,
-      recommendedActions: condition.treatmentConsiderations ? [condition.treatmentConsiderations] : ['Consult healthcare professional'],
-      seekMedicalAttention: condition.urgencyLevel === 'high' ? 'Seek immediate medical attention' : undefined,
-      visualDiagnosticFeatures: condition.visualDiagnosticFeatures || [],
-      photoAnalysisMethod: condition.photoAnalysisMethod,
-      medicalHistoryRelevance: condition.medicalHistoryRelevance,
-      medicationConsiderations: condition.medicationConsiderations
+      name: condition.name || condition.condition || 'Unknown Condition',
+      description: condition.clinicalReasoning || condition.description || condition.explanation || 'Clinical assessment based on provided symptoms and information.',
+      matchedSymptoms: condition.matchedSymptoms || condition.symptoms || healthCheckData.symptoms || [],
+      matchScore: condition.diagnosticScore || condition.confidence || condition.matchScore || 70,
+      recommendedActions: Array.isArray(condition.treatmentConsiderations) 
+        ? condition.treatmentConsiderations 
+        : condition.treatmentConsiderations 
+          ? [condition.treatmentConsiderations]
+          : condition.recommendations 
+            ? Array.isArray(condition.recommendations) ? condition.recommendations : [condition.recommendations]
+            : ['Consult with a healthcare professional for proper diagnosis and treatment'],
+      seekMedicalAttention: condition.urgencyLevel === 'high' || condition.urgent ? 'Seek immediate medical attention if symptoms worsen or persist' : undefined,
+      visualDiagnosticFeatures: condition.visualDiagnosticFeatures || condition.visualFeatures || [],
+      photoAnalysisMethod: condition.photoAnalysisMethod || condition.analysisMethod,
+      medicalHistoryRelevance: condition.medicalHistoryRelevance || condition.historyRelevance,
+      medicationConsiderations: condition.medicationConsiderations || condition.medicationNotes
+    }));
+  }
+  
+  // Also handle direct conditions array format
+  if (healthCheckData.conditions && Array.isArray(healthCheckData.conditions)) {
+    healthCheckData.analysis_results = healthCheckData.conditions.map((condition: any) => ({
+      name: condition.name || condition.condition || 'Unknown Condition',
+      description: condition.clinicalReasoning || condition.description || condition.explanation || 'Clinical assessment based on provided symptoms and information.',
+      matchedSymptoms: condition.matchedSymptoms || condition.symptoms || healthCheckData.symptoms || [],
+      matchScore: condition.diagnosticScore || condition.confidence || condition.matchScore || 70,
+      recommendedActions: Array.isArray(condition.treatmentConsiderations) 
+        ? condition.treatmentConsiderations 
+        : condition.treatmentConsiderations 
+          ? [condition.treatmentConsiderations]
+          : condition.recommendations 
+            ? Array.isArray(condition.recommendations) ? condition.recommendations : [condition.recommendations]
+            : ['Consult with a healthcare professional for proper diagnosis and treatment'],
+      seekMedicalAttention: condition.urgencyLevel === 'high' || condition.urgent ? 'Seek immediate medical attention if symptoms worsen or persist' : undefined,
+      visualDiagnosticFeatures: condition.visualDiagnosticFeatures || condition.visualFeatures || [],
+      photoAnalysisMethod: condition.photoAnalysisMethod || condition.analysisMethod,
+      medicalHistoryRelevance: condition.medicalHistoryRelevance || condition.historyRelevance,
+      medicationConsiderations: condition.medicationConsiderations || condition.medicationNotes
     }));
   }
 
