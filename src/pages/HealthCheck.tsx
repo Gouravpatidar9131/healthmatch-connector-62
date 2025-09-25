@@ -602,19 +602,7 @@ const HealthCheck = () => {
                       <Checkbox 
                         id={symptom}
                         checked={selectedSymptoms.includes(symptom)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedSymptoms(current => [...current, symptom]);
-                          } else {
-                            setSelectedSymptoms(current => current.filter(s => s !== symptom));
-                            // Remove photo if symptom is deselected
-                            setSymptomPhotos(prev => {
-                              const updated = { ...prev };
-                              delete updated[symptom];
-                              return updated;
-                            });
-                          }
-                        }}
+                        onCheckedChange={() => handleSymptomToggle(symptom, category.category)}
                       />
                       <div className="flex items-center">
                         <Label htmlFor={symptom} className="cursor-pointer">{symptom}</Label>

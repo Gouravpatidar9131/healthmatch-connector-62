@@ -38,8 +38,6 @@ interface HealthCheckData {
   overall_assessment?: string;
   height?: string;
   weight?: string;
-  data?: any; // For handling new API response format
-  conditions?: any[]; // For direct conditions array format
 }
 
 const HealthCheckResults = () => {
@@ -58,57 +56,7 @@ const HealthCheckResults = () => {
   const healthCheckData = location.state?.healthCheckData as HealthCheckData | undefined;
 
   // If no data is provided, redirect back to health check form
-  if (!healthCheckData) {
-    navigate('/health-check');
-    return null;
-  }
-
-  // Handle new API response format - extract conditions from data if available
-  if (healthCheckData.data && healthCheckData.data.conditions) {
-    healthCheckData.analysis_results = healthCheckData.data.conditions.map((condition: any) => ({
-      name: condition.name || condition.condition || 'Unknown Condition',
-      description: condition.clinicalReasoning || condition.description || condition.explanation || 'Clinical assessment based on provided symptoms and information.',
-      matchedSymptoms: condition.matchedSymptoms || condition.symptoms || healthCheckData.symptoms || [],
-      matchScore: condition.diagnosticScore || condition.confidence || condition.matchScore || 70,
-      recommendedActions: Array.isArray(condition.treatmentConsiderations) 
-        ? condition.treatmentConsiderations 
-        : condition.treatmentConsiderations 
-          ? [condition.treatmentConsiderations]
-          : condition.recommendations 
-            ? Array.isArray(condition.recommendations) ? condition.recommendations : [condition.recommendations]
-            : ['Consult with a healthcare professional for proper diagnosis and treatment'],
-      seekMedicalAttention: condition.urgencyLevel === 'high' || condition.urgent ? 'Seek immediate medical attention if symptoms worsen or persist' : undefined,
-      visualDiagnosticFeatures: condition.visualDiagnosticFeatures || condition.visualFeatures || [],
-      photoAnalysisMethod: condition.photoAnalysisMethod || condition.analysisMethod,
-      medicalHistoryRelevance: condition.medicalHistoryRelevance || condition.historyRelevance,
-      medicationConsiderations: condition.medicationConsiderations || condition.medicationNotes
-    }));
-  }
-  
-  // Also handle direct conditions array format
-  if (healthCheckData.conditions && Array.isArray(healthCheckData.conditions)) {
-    healthCheckData.analysis_results = healthCheckData.conditions.map((condition: any) => ({
-      name: condition.name || condition.condition || 'Unknown Condition',
-      description: condition.clinicalReasoning || condition.description || condition.explanation || 'Clinical assessment based on provided symptoms and information.',
-      matchedSymptoms: condition.matchedSymptoms || condition.symptoms || healthCheckData.symptoms || [],
-      matchScore: condition.diagnosticScore || condition.confidence || condition.matchScore || 70,
-      recommendedActions: Array.isArray(condition.treatmentConsiderations) 
-        ? condition.treatmentConsiderations 
-        : condition.treatmentConsiderations 
-          ? [condition.treatmentConsiderations]
-          : condition.recommendations 
-            ? Array.isArray(condition.recommendations) ? condition.recommendations : [condition.recommendations]
-            : ['Consult with a healthcare professional for proper diagnosis and treatment'],
-      seekMedicalAttention: condition.urgencyLevel === 'high' || condition.urgent ? 'Seek immediate medical attention if symptoms worsen or persist' : undefined,
-      visualDiagnosticFeatures: condition.visualDiagnosticFeatures || condition.visualFeatures || [],
-      photoAnalysisMethod: condition.photoAnalysisMethod || condition.analysisMethod,
-      medicalHistoryRelevance: condition.medicalHistoryRelevance || condition.historyRelevance,
-      medicationConsiderations: condition.medicationConsiderations || condition.medicationNotes
-    }));
-  }
-
-  // If no analysis results after processing, redirect back
-  if (!healthCheckData.analysis_results || healthCheckData.analysis_results.length === 0) {
+  if (!healthCheckData || !healthCheckData.analysis_results) {
     navigate('/health-check');
     return null;
   }
@@ -153,9 +101,9 @@ const HealthCheckResults = () => {
     : 0;
 
   // Check if results include visual analysis markers
-  const hasVisualDiagnosticFeatures = healthCheckData.analysis_results?.some(
+  const hasVisualDiagnosticFeatures = healthCheckData.analysis_results.some(
     condition => condition.visualDiagnosticFeatures && condition.visualDiagnosticFeatures.length > 0
-  ) || false;
+  );
 
   const handleSave = async () => {
     setSaving(true);
@@ -548,7 +496,7 @@ const HealthCheckResults = () => {
                           <div>
                             <h4 className="font-medium text-sm text-gray-500">Matched Symptoms:</h4>
                             <div className="flex flex-wrap gap-2 mt-1">
-                              {(condition.matchedSymptoms || []).map((symptom, i) => (
+                              {condition.matchedSymptoms.map((symptom, i) => (
                                 <Badge key={i} variant="outline" className="flex items-center gap-1">
                                   {symptom}
                                   {healthCheckData.symptom_photos && healthCheckData.symptom_photos[symptom] && (
@@ -568,7 +516,7 @@ const HealthCheckResults = () => {
                               <h4 className="font-medium text-green-800">Visual Diagnostic Features</h4>
                               <p className="text-sm text-green-700 mt-1">The AI identified the following visual characteristics in your photos:</p>
                               <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-green-700">
-                                {(condition.visualDiagnosticFeatures || []).map((feature, i) => (
+                                {condition.visualDiagnosticFeatures.map((feature, i) => (
                                   <li key={i}>{feature}</li>
                                 ))}
                               </ul>
@@ -586,7 +534,7 @@ const HealthCheckResults = () => {
                           <div>
                             <h4 className="font-medium text-sm text-gray-500">Recommendations:</h4>
                             <ul className="list-disc pl-5 mt-1 space-y-1">
-                              {(condition.recommendedActions || []).map((action, i) => (
+                              {condition.recommendedActions.map((action, i) => (
                                 <li key={i}>{action}</li>
                               ))}
                             </ul>
@@ -628,7 +576,7 @@ const HealthCheckResults = () => {
           </Accordion>
           
           {/* Photo Analysis Method explanation if available */}
-          {healthCheckData.analysis_results?.[0]?.photoAnalysisMethod && (
+          {healthCheckData.analysis_results[0]?.photoAnalysisMethod && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <h4 className="font-medium text-blue-800 flex items-center">
                 <AlertCircle className="h-4 w-4 mr-1" /> Photo Analysis Method
@@ -688,7 +636,7 @@ const HealthCheckResults = () => {
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Previous Medical Conditions</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {(healthCheckData.previous_conditions || []).map((condition, idx) => (
+                  {healthCheckData.previous_conditions.map((condition, idx) => (
                     <Badge key={idx} variant="outline" className="bg-red-50 text-red-700 border-red-200">
                       {condition}
                     </Badge>
@@ -701,7 +649,7 @@ const HealthCheckResults = () => {
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Current Medications</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {(healthCheckData.medications || []).map((medication, idx) => (
+                  {healthCheckData.medications.map((medication, idx) => (
                     <Badge key={idx} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                       {medication}
                     </Badge>
