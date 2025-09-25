@@ -101,9 +101,9 @@ const HealthCheckResults = () => {
     : 0;
 
   // Check if results include visual analysis markers
-  const hasVisualDiagnosticFeatures = healthCheckData.analysis_results.some(
-    condition => condition.visualDiagnosticFeatures && condition.visualDiagnosticFeatures.length > 0
-  );
+  const hasVisualDiagnosticFeatures = healthCheckData.analysis_results?.some(
+    (condition) => Array.isArray(condition.visualDiagnosticFeatures) && condition.visualDiagnosticFeatures.length > 0
+  ) || false;
 
   const handleSave = async () => {
     setSaving(true);
@@ -313,7 +313,7 @@ const HealthCheckResults = () => {
             <div>
               <h3 className="text-sm font-medium text-gray-500">Reported Symptoms</h3>
               <div className="mt-2 flex flex-wrap gap-2">
-                {healthCheckData.symptoms.map((symptom, index) => (
+                {(healthCheckData.symptoms || []).map((symptom, index) => (
                   <Badge key={index} variant="outline" className="flex items-center gap-1">
                     {symptom}
                     {healthCheckData.symptom_photos && healthCheckData.symptom_photos[symptom] && (
@@ -496,7 +496,7 @@ const HealthCheckResults = () => {
                           <div>
                             <h4 className="font-medium text-sm text-gray-500">Matched Symptoms:</h4>
                             <div className="flex flex-wrap gap-2 mt-1">
-                              {condition.matchedSymptoms.map((symptom, i) => (
+                              {(condition.matchedSymptoms || []).map((symptom, i) => (
                                 <Badge key={i} variant="outline" className="flex items-center gap-1">
                                   {symptom}
                                   {healthCheckData.symptom_photos && healthCheckData.symptom_photos[symptom] && (
@@ -534,7 +534,7 @@ const HealthCheckResults = () => {
                           <div>
                             <h4 className="font-medium text-sm text-gray-500">Recommendations:</h4>
                             <ul className="list-disc pl-5 mt-1 space-y-1">
-                              {condition.recommendedActions.map((action, i) => (
+                              {(condition.recommendedActions || []).map((action, i) => (
                                 <li key={i}>{action}</li>
                               ))}
                             </ul>
