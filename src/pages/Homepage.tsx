@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -16,11 +16,7 @@ import {
 } from "lucide-react";
 
 const Homepage = () => {
-  const GOOGLE_FORM_URL = "https://forms.google.com/your-waitlist-form"; // Replace with your actual Google Form URL
-
-  const handleJoinWaitlist = () => {
-    window.open(GOOGLE_FORM_URL, '_blank');
-  };
+  const navigate = useNavigate();
 
   const features = [
     {
@@ -75,12 +71,21 @@ const Homepage = () => {
               <a href="#contact" className="text-gray-600 hover:text-blue-500 font-medium transition-colors">
                 Contact
               </a>
-              <Button
-                onClick={handleJoinWaitlist}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl"
-              >
-                Join Waitlist
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => navigate('/login')}
+                  variant="outline"
+                  className="border-2 border-blue-500 text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-xl font-medium transition-all"
+                >
+                  Login
+                </Button>
+                <Button
+                  onClick={() => navigate('/login')}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl"
+                >
+                  Sign Up
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -108,19 +113,20 @@ const Homepage = () => {
               
               <div className="flex flex-col sm:flex-row gap-6">
                 <Button
-                  onClick={handleJoinWaitlist}
+                  onClick={() => navigate('/login')}
                   size="xl" 
                   className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-10 py-6 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                 >
-                  Get Started Today
+                  Sign Up
                   <ArrowRight className="ml-3 h-6 w-6" />
                 </Button>
                 <Button 
+                  onClick={() => navigate('/login')}
                   variant="outline" 
                   size="xl"
                   className="border-2 border-blue-200 text-blue-600 hover:bg-blue-50 px-10 py-6 rounded-2xl text-lg font-semibold hover:border-blue-300 transition-all"
                 >
-                  Learn More
+                  Login
                 </Button>
               </div>
 
@@ -238,14 +244,24 @@ const Homepage = () => {
             Join thousands of users who trust HealthMatch for intelligent, 
             personalized healthcare management.
           </p>
-          <Button
-            onClick={handleJoinWaitlist}
-            size="xl" 
-            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-16 py-6 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            Start Your Journey
-            <ArrowRight className="ml-3 h-6 w-6" />
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Button
+              onClick={() => navigate('/login')}
+              size="xl" 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-16 py-6 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+            >
+              Sign Up Now
+              <ArrowRight className="ml-3 h-6 w-6" />
+            </Button>
+            <Button 
+              onClick={() => navigate('/login')}
+              variant="outline" 
+              size="xl"
+              className="border-2 border-blue-500 text-blue-600 hover:bg-blue-50 px-16 py-6 rounded-2xl text-lg font-semibold hover:border-blue-600 transition-all"
+            >
+              Login
+            </Button>
+          </div>
         </div>
       </section>
 
