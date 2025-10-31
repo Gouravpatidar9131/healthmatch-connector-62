@@ -80,10 +80,7 @@ const symptomCategories = [
     supportsPhoto: true,
     photoRecommended: true
   },
-  {
-    category: "Mental Health",
-    symptoms: ["Anxiety", "Depression", "Sleep problems", "Mood swings", "Difficulty concentrating"]
-  }
+  
 ];
 
 const severityOptions = ["Mild", "Moderate", "Severe"];
