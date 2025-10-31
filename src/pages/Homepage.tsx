@@ -57,7 +57,7 @@ const Homepage = () => {
                 <Heart className="text-white h-6 w-6" />
               </div>
               <span className="font-bold text-2xl bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Curezy
+                HealthMatch
               </span>
             </div>
             
@@ -308,7 +308,7 @@ const Homepage = () => {
                   <Clock className="h-4 w-4" />
                   <span>24/7 Support</span>
                 </li>
-                <li>admin@curezy.in</li>
+                <li>admin@healthmatch.in</li>
                 <li>1-800-HEALTH</li>
               </ul>
             </div>
