@@ -6,6 +6,3 @@ verify_jwt = false
 
 [functions.groq-chat]
 verify_jwt = false
-
-[functions.transcribe-audio]
-verify_jwt = false

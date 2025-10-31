@@ -38,16 +38,6 @@ interface HealthCheckData {
   overall_assessment?: string;
   height?: string;
   weight?: string;
-  chronicDiseaseRisk?: {
-    detected: boolean;
-    conditions: Array<{
-      condition: string;
-      riskLevel: string;
-      indicators: string[];
-      recommendations: string;
-      preventiveMeasures: string[];
-    }>;
-  };
 }
 
 const HealthCheckResults = () => {
@@ -446,66 +436,6 @@ const HealthCheckResults = () => {
           )}
         </CardContent>
       </Card>
-
-      {/* Chronic Disease Risk Assessment */}
-      {healthCheckData.chronicDiseaseRisk?.detected && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="text-orange-800 flex items-center">
-              <AlertCircle className="h-5 w-5 mr-2" />
-              Chronic Disease Risk Assessment
-            </CardTitle>
-            <CardDescription className="text-orange-700">
-              Based on your symptoms and medical history, we've identified potential risk factors for chronic conditions
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {healthCheckData.chronicDiseaseRisk.conditions.map((condition, index) => (
-              <div key={index} className="p-4 bg-white border border-orange-200 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-orange-900">{condition.condition}</h3>
-                  <Badge className={`${
-                    condition.riskLevel === 'high' 
-                      ? 'bg-red-100 text-red-800' 
-                      : condition.riskLevel === 'moderate'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-green-100 text-green-800'
-                  }`}>
-                    {condition.riskLevel.toUpperCase()} RISK
-                  </Badge>
-                </div>
-                
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-1">Risk Indicators:</h4>
-                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                      {condition.indicators.map((indicator, idx) => (
-                        <li key={idx}>{indicator}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-1">Recommendations:</h4>
-                    <p className="text-sm text-gray-600">{condition.recommendations}</p>
-                  </div>
-                  
-                  {condition.preventiveMeasures && condition.preventiveMeasures.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-sm text-gray-700 mb-1">Preventive Measures:</h4>
-                      <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                        {condition.preventiveMeasures.map((measure, idx) => (
-                          <li key={idx}>{measure}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Enhanced Analysis Results */}
       <Card>

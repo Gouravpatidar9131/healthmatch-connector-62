@@ -25,7 +25,6 @@ serve(async (req) => {
       previousConditions, 
       medications, 
       notes,
-      voiceNote,
       analysisInstructions,
       symptomCategories
     } = await req.json();
@@ -67,10 +66,6 @@ serve(async (req) => {
     if (notes && notes.trim()) {
       clinicalContext += `Additional Notes: ${notes}\n`;
     }
-    
-    if (voiceNote && voiceNote.trim()) {
-      clinicalContext += `Voice Note Transcript: ${voiceNote}\n`;
-    }
 
     let categoryContext = "";
     if (symptomCategories && symptomCategories.length > 0) {
@@ -98,9 +93,6 @@ ANALYSIS REQUIREMENTS:
 - Provide evidence-based differential diagnosis
 - Consider symptom category context for accuracy
 - Include risk stratification and urgency assessment
-- Assess for potential chronic disease indicators (diabetes, hypertension, heart disease, respiratory conditions, thyroid disorders, etc.)
-- Consider symptom patterns that may suggest long-term health conditions
-- Evaluate lifestyle factors and medical history for chronic disease risk
 - Suggest appropriate investigations and management
 - Maintain focus within relevant medical specialties
 
@@ -128,18 +120,6 @@ Provide analysis in the following JSON format:
       "urgencyLevel": "Low/Moderate/High/Emergency"
     }
   ],
-  "chronicDiseaseRisk": {
-    "detected": true,
-    "conditions": [
-      {
-        "condition": "Name of chronic condition",
-        "riskLevel": "Low/Moderate/High",
-        "indicators": ["symptoms or factors suggesting this condition"],
-        "recommendations": "Specific advice for this condition",
-        "preventiveMeasures": ["lifestyle changes and preventive actions"]
-      }
-    ]
-  },
   "overallClinicalAssessment": {
     "primaryWorkingDiagnosis": "Most likely condition",
     "diagnosticCertainty": "Overall confidence percentage",
