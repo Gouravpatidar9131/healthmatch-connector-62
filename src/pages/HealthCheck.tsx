@@ -11,6 +11,7 @@ import { useUserHealthChecks } from '@/services/userDataService';
 import { Loader2, Upload, Image as ImageIcon, AlertCircle, Camera, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { VoiceRecorder } from '@/components/sos/VoiceRecorder';
 
 // Updated symptom categories with expanded dental symptoms based on dental departments
 const symptomCategories = [
@@ -117,6 +118,8 @@ const HealthCheck = () => {
   const [currentSymptomForPhoto, setCurrentSymptomForPhoto] = useState<string>("");
   const [cameraActive, setCameraActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [voiceNote, setVoiceNote] = useState<string>("");
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   // Add cleanup effect for camera stream
   useEffect(() => {
@@ -367,6 +370,37 @@ const HealthCheck = () => {
     setCurrentSymptomForPhoto("");
   };
 
+  const handleVoiceRecording = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'voice-note.webm');
+
+      const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      if (data?.transcript) {
+        setVoiceNote(data.transcript);
+        toast({
+          title: "Voice note transcribed",
+          description: "Your voice note has been converted to text"
+        });
+      }
+    } catch (error) {
+      console.error("Error transcribing audio:", error);
+      toast({
+        title: "Transcription failed",
+        description: "Unable to transcribe voice note. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
   const analyzeSymptoms = async () => {
     if (selectedSymptoms.length === 0) {
       toast({
@@ -414,6 +448,7 @@ const HealthCheck = () => {
           previousConditions: previousConditions ? previousConditions.split(',').map(item => item.trim()).filter(item => item) : [],
           medications: medications ? medications.split(',').map(item => item.trim()).filter(item => item) : [],
           notes: notes.trim() || null,
+          voiceNote: voiceNote.trim() || null,
           // Enhanced analysis instructions with category constraints
           analysisInstructions: {
             requireComprehensiveDiagnosis: true,
@@ -484,7 +519,8 @@ const HealthCheck = () => {
           overall_assessment: response.data.overallAssessment,
           category_constrained_analysis: response.data.categoryConstrainedAnalysis,
           specialty_focused_diagnosis: response.data.specialtyFocusedDiagnosis,
-          symptom_category_mapping: symptomCategoryMapping
+          symptom_category_mapping: symptomCategoryMapping,
+          chronicDiseaseRisk: response.data.chronicDiseaseRisk
         };
         
         navigate('/health-check-results', { 
@@ -874,6 +910,20 @@ const HealthCheck = () => {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Any other details about your symptoms or condition"
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Voice Note (Optional)</Label>
+              <VoiceRecorder 
+                onRecordingComplete={handleVoiceRecording}
+                isTranscribing={isTranscribing}
+              />
+              {voiceNote && (
+                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm font-medium text-green-700 mb-1">Transcribed voice note:</p>
+                  <p className="text-sm text-green-600">{voiceNote}</p>
+                </div>
+              )}
             </div>
           </CardContent>
           <CardFooter>
